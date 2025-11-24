@@ -17,7 +17,7 @@ This system provides tools for event organization, booth management, user regist
 ## 🧩 Tech Stack
 
 ### **Management**
-- Jira Cloud
+- Jira Cloud (https://compro-student-team.atlassian.net/jira/software/projects/SCRUM/boards/1)
 
 ### **Front-end**
 - React **19.2.0**  
