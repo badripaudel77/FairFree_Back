@@ -1,7 +1,8 @@
 # 🎡 FairFree – Free Fair in Fairfield
 
-A software engineering project developed to support and manage a free community fair in Fairfield.  
-This system provides tools for event organization, booth management, user registration, and secure authentication.
+A software engineering project developed to support a community giveaway and donation application in Fairfield.  
+The system helps users share or receive items that are near expiration or no longer needed, reducing waste and supporting the local community.  
+It also provides organizers with tools for event coordination, user registration, and secure authentication.
 
 ---
 
