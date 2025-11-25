@@ -1,10 +1,7 @@
-# 🎡 FairFree – Free Fair in Fairfield
+# 🎡 FairFree – Backend Service  
+Backend API for the FairFree community donation and waste-reduction platform.
 
-FairFree is a smart tracking and donation platform designed to help individuals, households, and organizations reduce waste and maximize the utility of items before they expire. Users can add any item — food, clothes, or household goods — set expiration or usage dates, and receive timely reminders to act. Items approaching expiration can be marked for donation, allowing nearby individuals in need to claim them for reuse. The system notifications, dashboards, and role-based access for donors and recipients. With FairFree, items are never wasted, and communities benefit from smarter, more sustainable sharing.
-
-A software engineering project developed to support a community giveaway and donation application in Fairfield.  
-The system helps users share or receive items that are near expiration or no longer needed, reducing waste and supporting the local community.  
-It also provides organizers with tools for event coordination, user registration, and secure authentication.
+FairFree helps individuals, households, and organizations track item expiration dates, reduce waste, and donate items to community members in need. This backend provides secure authentication, business logic, notifications, and persistent data management for all system features.
 
 ---
 
@@ -17,32 +14,50 @@ It also provides organizers with tools for event coordination, user registration
 
 ---
 
-## 🧩 Tech Stack
+## 🔗 Related Repositories
 
-### **Management**
-- Jira Cloud (https://compro-student-team.atlassian.net/jira/software/projects/SCRUM/boards/1)
+| Component | Repository |
+|----------|------------|
+| **Frontend (React)** | https://github.com/badripaudel77/FairFree_Front |
+| **Backend (Spring Boot)** | *(You are here)* |
 
-### **Front-end**
-- React **19.2.0**  
-- Cross-platform application (Web & Mobile)
+---
 
-### **Back-end**
+## 🧩 Features (Backend)
+
+- 🧾 **User & Role Management** (Auth0 integrated)  
+- 🍎 **Item Tracking** (create, update, expiration management)  
+- 🎁 **Donation & Claim System**  
+- 🔔 **Notification Engine** for expiring items  
+- 📊 **Dashboard & Analytics APIs**  
+- 🔐 **Secure JWT-based authentication**  
+- ☁️ **Cloud-ready architecture (AWS)**  
+
+---
+
+## 🧰 Tech Stack
+
+### **Backend**
 - Java **24.0.1**  
-- Spring Boot
-
-### **Authentication**
-- Auth0
+- Spring Boot  
+- Maven  
+- Auth0 Authentication  
+- Spring Security  
+- RESTful API
 
 ### **Infrastructure**
-- AWS (Elastic Beanstalk, S3, …)  
-- Docker Containers
+- AWS Elastic Beanstalk  
+- AWS S3  
+- Docker  
+- GitHub Actions (CI/CD)
 
 ### **Database**
-- AWS RDS
+- AWS RDS (PostgreSQL or MySQL)
 
-### **CI/CD**
-- GitHub Actions
 
-### **Communication**
-- Microsoft Teams  
-- Verbal
+---
+
+## 🚀 Deployment (AWS Elastic Beanstalk)
+- Application is containerized using Docker
+- GitHub Actions builds & deploys automatically
+- Supports rolling updates and zero-downtime releases
