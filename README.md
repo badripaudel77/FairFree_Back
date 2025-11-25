@@ -1,5 +1,7 @@
 # 🎡 FairFree – Free Fair in Fairfield
 
+FairFree is a smart tracking and donation platform designed to help individuals, households, and organizations reduce waste and maximize the utility of items before they expire. Users can add any item — food, clothes, or household goods — set expiration or usage dates, and receive timely reminders to act. Items approaching expiration can be marked for donation, allowing nearby individuals in need to claim them for reuse. The system notifications, dashboards, and role-based access for donors and recipients. With FairFree, items are never wasted, and communities benefit from smarter, more sustainable sharing.
+
 A software engineering project developed to support a community giveaway and donation application in Fairfield.  
 The system helps users share or receive items that are near expiration or no longer needed, reducing waste and supporting the local community.  
 It also provides organizers with tools for event coordination, user registration, and secure authentication.
