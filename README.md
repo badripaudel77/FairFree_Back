@@ -45,4 +45,4 @@ It also provides organizers with tools for event coordination, user registration
 
 ### **Communication**
 - Microsoft Teams  
-- Ver
+- Verbal
