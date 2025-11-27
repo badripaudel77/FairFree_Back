@@ -1,0 +1,151 @@
+1. System Overview
+REQ-001
+The system shall provide a public, free-to-use web-based platform for tracking and donating items that are prone to damage or expiration.
+REQ-002
+The system shall allow users to post items for donation, browse available items, claim items, and manage their own items.
+REQ-003
+The system shall provide dashboards and analytics to visualize user activities and item management.
+
+2. Actors / Users
+REQ-010
+The system shall support access by the general public with verified credentials (e.g., email).
+REQ-011
+The system shall distinguish between registered users and non-registered visitors.
+REQ-012
+The system shall allow registered users to post, browse, claim, and manage items.
+
+3. User Management
+REQ-100 – Registration
+REQ-100.1
+The system shall allow new users to register using an email address and password.
+REQ-100.2
+The system shall validate the format of the email address during registration.
+REQ-100.3
+The system shall prevent registration of duplicate user accounts with the same email address.
+REQ-100.4
+The system shall store user credentials securely.
+
+REQ-101 – Login
+REQ-101.1
+The system shall allow users to log in using their registered email and password.
+REQ-101.2
+The system shall only grant access to users whose credentials match a registered account.
+REQ-101.3
+The system shall provide an error message when login credentials are invalid.
+
+REQ-102 – User Uniqueness and Integrity
+REQ-102.1
+The system shall enforce uniqueness of each user account based on email address across the platform.
+REQ-102.2
+The system shall ensure that all user-related operations (e.g., posting items, claiming items) are associated with a unique user identity.
+
+4. Item Management
+REQ-200 – Post Item for Donation
+REQ-200.1
+The system shall allow registered users to create a new item listing for donation.
+REQ-200.2
+When posting an item, the system shall allow the user to provide:
+item name
+item description
+item image(s)
+pickup location
+contact phone number
+expiration or damage date (if applicable)
+any other relevant attributes (e.g., category).
+
+REQ-200.3
+The system shall store posted items as “Available for donation” by default.
+REQ-200.4
+The system shall display posted items to other users, including item name, description, image(s), pickup location, and contact information as configured.
+
+REQ-201 – Manage Own Items
+REQ-201.1
+The system shall allow a user to view a list of items they have posted.
+REQ-201.2
+The system shall allow the owner of an item to edit the details of their posted item.
+REQ-201.3
+The system shall allow the owner of an item to delete their posted item.
+REQ-201.4
+The system shall prevent non-owners from editing or deleting an item.
+
+REQ-202 – Browse Items
+REQ-202.1
+The system shall allow users to browse items posted by other users.
+REQ-202.2
+The system shall display at least the following information for each browsable item:
+item name
+item description
+item image(s)
+pickup location
+current status (e.g., Available, Claimed, Received).
+REQ-202.3
+The system may allow filtering or searching of items by attributes (e.g., location, category, availability), if included in scope.
+
+5. Item Claiming and Tracking
+REQ-300 – Claim Item
+REQ-300.1
+The system shall allow a registered user to claim an item that is currently “Available for donation.”
+REQ-300.2
+Upon being claimed, the system shall change the item status to “Claimed” or “On hold.”
+REQ-300.3
+The system shall associate the claimed item with the user who claimed it.
+
+REQ-301 – Pickup and Receipt
+REQ-301.1
+The system shall allow the claiming user (or the item owner, depending on design) to mark a claimed item as “Received” once it has been picked up.
+REQ-301.2
+The system shall track the status history of each item (e.g., Available → Claimed → Received).
+REQ-301.3
+The system shall prevent an item that is “Claimed” or “Received” from being claimed again as “Available,” unless explicitly reset by the owner or by an admin (if such role exists).
+
+6. Notifications (Expiration / Damage Reminders)
+REQ-400 – Expiration Reminders
+REQ-400.1
+The system shall allow users to specify an expiration or expected damage date for items that are prone to expiration or damage.
+REQ-400.2
+The system shall generate a reminder notification for items approaching their expiration/damage date.
+REQ-400.3
+The system shall send a reminder notification at least once within a configurable period before expiration (e.g., 5 days before the expiration date).
+REQ-400.4
+The system shall be able to send a notification on the day of expiration, if configured.
+
+REQ-401 – Actions on Reminder
+REQ-401.1
+Upon receiving an expiration reminder, the system shall allow the user to mark the item as “Available for donation” if it is not yet donated.
+REQ-401.2
+The system shall allow users to update or remove the expiration/damage date of an item.
+
+7. Analytics and Visualization
+REQ-500 – Dashboards
+REQ-500.1
+The system shall provide dashboards that display aggregated information about users, items, and activities on the platform.
+REQ-500.2
+The system shall provide at least the following analytic views, where feasible:
+Number of registered users
+Number of items posted, claimed, and received
+Activity over time (e.g., items posted per day/week/month).
+
+REQ-501 – Charts and Visualizations
+REQ-501.1
+The system shall support visualization of data using charts such as histograms.
+REQ-501.2
+The system shall support visualization of data using pie charts.
+REQ-501.3
+The system shall ensure that visualizations provide an understandable overview of system usage (e.g., distribution of item categories, locations, or statuses).
+
+8. Non-Functional / Quality Requirements (Implied from Goals)
+REQ-600 – Accessibility and Cost
+REQ-600.1
+The system shall be free to use for all users.
+REQ-600.2
+The system shall be accessible via common web browsers without requiring specialized software.
+
+REQ-601 – Security and Data Integrity
+REQ-601.1
+The system shall ensure that only authenticated users can perform operations such as posting, claiming, and managing items.
+REQ-601.2
+The system shall ensure that only the owner of an item can modify or delete that item.
+REQ-601.3
+The system shall protect user data from unauthorized access, consistent with applicable security best practices.
+REQ-601.4
+The system shall ensure the integrity of data related to users and items (no inconsistent or orphaned records, enforced relationships, etc.).
