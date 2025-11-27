@@ -1,0 +1,27 @@
+1. Registration and Login
+As a user,
+I want to be able to register and log in using my email credentials,
+So that I can securely access the platform, track donated items, and claim or donate items without creating duplicates.
+Acceptance Criteria:
+●	Users can register with an email address and password.
+●	Users can log in using registered credentials.
+●	The system prevents duplicate user registration (e.g., same email address).
+
+2. User Story: Post an Item for Donation
+As a registered user,
+I want to post items for donation by providing details like item description, image, and pickup location,
+So that others can view the item, claim it, and pick it up from the specified location.
+Acceptance Criteria:
+●	Users can provide details like item name, description, image, location, and contact number.
+●	The system stores and displays the item as available for donation.
+●	Only the owner can delete or modify their posted item.
+●	Other users can browse and claim items, with a "claimed" status until it’s marked as "received."
+
+
+3. User Story: Expiration Reminder for Items
+As a user,
+ I want to receive reminders when an item is approaching its expiration or damage date,
+ So that I can either mark it as available for donation or take necessary action before it becomes unusable.
+Acceptance Criteria:
+●	The user receives a reminder notification (e.g., 5 days before expiration).
+●	The system allows the user to mark the item as "available for donation" when nearing expiration.
