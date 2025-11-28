@@ -1,0 +1,41 @@
+spring:
+  application:
+    name: FairFree
+
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/fairfree}
+    username: ${DB_USER:postgres}
+    password: ${DB_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update        # Automatically update tables during development
+    show-sql: true            # Show SQL queries in logs
+    properties:
+      hibernate:
+        format_sql: true
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+
+  sql:
+    init:
+      mode: always
+      platform: postgres
+
+server:
+  port: 8080
+
+fairfree:
+    jwt:
+      secret:
+          key: secret-key-for-generating-jwt-for-fairfree-app-access
+      access-token:
+        expiration: 36000000 # 10 hours
+      refresh-token:
+        expiration: 2592000000 # 30 days
+
+# Logging
+logging:
+  level:
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE

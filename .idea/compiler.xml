@@ -9,19 +9,9 @@
         <module name="fairfree" />
       </profile>
     </annotationProcessing>
-    <bytecodeTargetLevel>
-      <module name="01-authorization-mvc.main" target="17" />
-      <module name="01-authorization-mvc.test" target="17" />
-    </bytecodeTargetLevel>
+    <bytecodeTargetLevel target="25" />
   </component>
   <component name="JavacSettings">
-    <option name="ADDITIONAL_OPTIONS_OVERRIDE">
-      <module name="01-authorization-mvc.main" options="-parameters" />
-      <module name="01-authorization-mvc.test" options="-parameters" />
-      <module name="FareFree-Backend" options="-parameters" />
-      <module name="FareFree-Backend.main" options="-parameters" />
-      <module name="FareFree-Backend.test" options="-parameters" />
-      <module name="fairfree" options="-parameters" />
-    </option>
+    <option name="ADDITIONAL_OPTIONS_STRING" value="-parameters" />
   </component>
 </project>
