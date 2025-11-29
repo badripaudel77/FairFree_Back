@@ -1,16 +1,21 @@
 package com.app.fairfree.api;
 
 import com.app.fairfree.dto.ItemRequest;
+import com.app.fairfree.dto.ItemResponse;
 import com.app.fairfree.enums.ItemStatus;
 import com.app.fairfree.model.Item;
 import com.app.fairfree.model.User;
 import com.app.fairfree.repository.UserRepository;
 import com.app.fairfree.service.ItemService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -23,25 +28,30 @@ public class ItemController {
     private final ItemService itemService;
     private final UserRepository userRepository;
 
-    //  Add Item
-    @PostMapping("")
-    public ResponseEntity<Item> addItem(
+    // TODO: NOT working. Need To Fix
+    // Authenticated user can add item.
+    // Add item for tracking and for donation.
+    //  Add Item, including upto three images.
+    @PostMapping(value = "", consumes = { "multipart/form-data" })
+   // @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<ItemResponse> addItem(
             @AuthenticationPrincipal UserDetails userDetails,
-            @RequestBody ItemRequest itemToBeAdded
-            ) {
+            @RequestPart ItemRequest itemToBeAdded,
+            @RequestPart(value = "images", required = false) List<MultipartFile> images) {
         // Passing @AuthenticationPrincipal UserDetails userDetails, is same as this.
         // Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         // authentication.getName();
         User user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        Item item = itemService.addItem(user, itemToBeAdded.name(), itemToBeAdded.location(), itemToBeAdded.imageUrl(), itemToBeAdded.expiresAfterDays(), itemToBeAdded.neverExpires());
-        return ResponseEntity.ok(item);
+        ItemResponse item = itemService.addItem(user, itemToBeAdded, images);
+        return ResponseEntity.status(HttpStatus.CREATED).body(item);
     }
 
     //  Get All Available Items
     @GetMapping("/available")
     public ResponseEntity<List<Item>> getAllAvailableItems() {
+        System.out.println("getting all item.s");
         return ResponseEntity.ok(itemService.getAllAvailableItems());
     }
 

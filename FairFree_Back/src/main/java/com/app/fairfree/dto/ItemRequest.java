@@ -1,11 +1,16 @@
 package com.app.fairfree.dto;
 
-import java.time.LocalDateTime;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 public record ItemRequest(
         String name,
+        String description,
         String location,
-        String imageUrl,
-        int expiresAfterDays,
-        boolean neverExpires // if item doesn't expire, like clothes
+        Double latitude,
+        Double longitude,
+        List<MultipartFile> images, // up to 3 files
+        Integer expiresAfterDays,
+        Boolean neverExpires // if item doesn't expire, like clothes
 ) {}

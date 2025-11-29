@@ -4,3 +4,4 @@ Please use the following software versions for setting up.
 - **PostgreSQL 17.5** or later. 
 - Have **maven**  version **3.9.11** install for build tool.
 - Create postgres database called **fairfree**
+- API lists (swagger UI) : http://localhost:8080/swagger-ui/index.html

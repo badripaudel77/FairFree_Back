@@ -4,6 +4,8 @@ import com.app.fairfree.enums.ItemStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * This class is for holding info about the item to be tracked / donated.
@@ -23,7 +25,19 @@ public class Item {
 
     private String name;
 
-    private String imageUrl; // image url, ref to actual file.
+    private String description;
+
+    // store multiple image URLs
+    @ElementCollection
+    @CollectionTable(name = "item_images", joinColumns = @JoinColumn(name = "item_id"))
+    @Column(name = "image_url", length = 1024)
+    @Builder.Default
+    private List<String> imageUrls = new ArrayList<>();
+
+    // latitude / longitude (for location queries & map display)
+    private Double latitude;
+    private Double longitude;
+
     private String location; // location of the item (to show on map).
 
     @Enumerated(EnumType.STRING)
@@ -33,17 +47,24 @@ public class Item {
 
     private LocalDateTime updatedAt;
     private Integer expiresAfterDays; // Expiration of the item, can be used for reminders email
+    private Boolean neverExpires;
 
 
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User owner; // Who added the item
 
+    @ManyToOne
+    @JoinColumn(name = "receiver_id")
+    private User receiver;
 
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = createdAt;
+        if (status == null) {
+            status = ItemStatus.PRIVATE;
+        }
     }
 
     @PreUpdate
