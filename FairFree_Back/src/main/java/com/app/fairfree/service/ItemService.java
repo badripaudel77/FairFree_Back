@@ -15,6 +15,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -27,22 +28,8 @@ public class ItemService {
 
     @Transactional
     public ItemResponse addItem(User user, ItemRequest itemRequest, List<MultipartFile> images) {
-        int expiresAfterDays;
-        if (itemRequest.neverExpires()) {
-            expiresAfterDays = Integer.MAX_VALUE;
-        }
-        else {
-            expiresAfterDays = itemRequest.expiresAfterDays();
-        }
-        // Upload each file to S3 and collect image URLs
-        List<String> uploadedImageUrls = new ArrayList<>();
-        if (images != null && !images.isEmpty()) {
-            for (MultipartFile file : images) {
-                String url = fileService.uploadImagesToCloud(file);
-                uploadedImageUrls.add(url);
-            }
-        }
-        // Create Item entity
+        int expiresAfterDays = itemRequest.neverExpires() ? Integer.MAX_VALUE : itemRequest.expiresAfterDays();
+
         Item item = Item.builder()
                 .name(itemRequest.name())
                 .description(itemRequest.description())
@@ -51,19 +38,47 @@ public class ItemService {
                 .longitude(itemRequest.longitude())
                 .status(ItemStatus.PRIVATE)
                 .owner(user)
-                .receiver(null) // when created, by default it is null.
+                .receiver(null)
                 .expiresAfterDays(expiresAfterDays)
                 .build();
 
-        // Saving uploaded image URLs in a separate ItemImage table
-        if (!uploadedImageUrls.isEmpty()) {
-            item.setImageUrls(uploadedImageUrls);
-        }
+        // Save item first to get its ID for S3 folder organization
         Item savedItem = itemRepository.save(item);
-        ItemResponse response = new ItemResponse(savedItem.getId(), savedItem.getName(), savedItem.getLocation(),
-                savedItem.getImageUrls(), savedItem.getStatus(), savedItem.getOwner().getId(), null,
-                savedItem.getOwner().getFullName(), savedItem.getExpiresAfterDays(), savedItem.getNeverExpires());
-        return response;
+
+        // Upload images to S3 GET URLS
+        List<ItemImage> imageEntities = new ArrayList<>();
+        if (images != null && !images.isEmpty()) {
+            for (MultipartFile file : images) {
+                // Upload image to S3; returns a map with 'key' and 'url'
+                Map<String, String> map = fileService.uploadImage(file, savedItem.getId());
+                ItemImage image = ItemImage.builder()
+                        .imageUrl(map.get("url"))
+                        .imageKey(map.get("key"))   // S3 key for IMAGE TRACKING
+                        .item(savedItem)
+                        .build();
+                imageEntities.add(image);
+            }
+            // Save images to DB
+            imageItemRepository.saveAll(imageEntities);
+            // Assign images to item entity (for JPA mapping)
+            savedItem.setImages(imageEntities);
+        }
+        List<String> imageUrls = savedItem.getImages().stream()
+                .map(ItemImage::getImageUrl)
+                .toList();
+
+        return new ItemResponse(
+                savedItem.getId(),
+                savedItem.getName(),
+                savedItem.getLocation(),
+                imageUrls,             // pass only URLs to frontend
+                savedItem.getStatus(),
+                savedItem.getOwner().getId(),
+                null,
+                savedItem.getOwner().getFullName(),
+                savedItem.getExpiresAfterDays(),
+                savedItem.getNeverExpires()
+        );
     }
 
     public List<Item> getAllAvailableItems() {
@@ -87,6 +102,14 @@ public class ItemService {
                     if (!item.getOwner().getId().equals(owner.getId())) {
                         throw new RuntimeException("You are not authorized to delete this item");
                     }
+                    // Get all image keys associated with the item
+                    List<String> imageKeys = item.getImages().stream()
+                            .map(ItemImage::getImageKey)
+                            .toList();
+                    // Delete images from S3
+                    fileService.deleteImages(imageKeys);
+
+                    // Delete item from DB (this will cascade to ItemImage if properly mapped)
                     itemRepository.delete(item);
                     return item;
                 })

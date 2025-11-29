@@ -19,6 +19,9 @@ public class ItemImage {
     @Column(name = "image_url")
     private String imageUrl;
 
+    @Column(name = "image_key", length = 1024)
+    private String imageKey;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "item_id")
     private Item item;

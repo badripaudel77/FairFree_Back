@@ -26,6 +26,15 @@ spring:
       max-file-size: 10MB
       max-request-size: 10MB
 
+# AWS S3 Credentials
+# Access and Secret Key are injected with as env variables.
+aws:
+  region: us-east-1
+  s3:
+    bucket: fairfree-item-images
+  accessKey: ${AWS_ACCESS_KEY:YOUR_VALID_ACCESS_KEY}
+  secretKey: ${AWS_SECRET_KEY:YOUR_VALID_SECRET_KEY}
+
 server:
   port: 8080
 

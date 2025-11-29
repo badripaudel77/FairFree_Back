@@ -27,12 +27,8 @@ public class Item {
 
     private String description;
 
-    // store multiple image URLs
-    @ElementCollection // acts as cascade = ALL
-    @CollectionTable(name = "item_images", joinColumns = @JoinColumn(name = "item_id"))
-    @Column(name = "image_url", length = 1024)
-    @Builder.Default
-    private List<String> imageUrls = new ArrayList<>();
+    @OneToMany(mappedBy = "item", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ItemImage> images = new ArrayList<>();
 
     // latitude / longitude (for location queries & map display)
     private Double latitude;

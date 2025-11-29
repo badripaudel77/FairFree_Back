@@ -8,6 +8,8 @@ import com.app.fairfree.repository.RoleRepository;
 import com.app.fairfree.repository.UserRepository;
 import com.app.fairfree.service.JwtService;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -28,6 +30,8 @@ public class AuthController {
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+
+    Logger logger = LoggerFactory.getLogger(this.getClass());
 
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@RequestBody SignupRequest request) {
@@ -52,6 +56,7 @@ public class AuthController {
         user.setRoles(roles);
 
         userRepository.save(user);
+        logger.info("User {} successfully registered in the platform.", user.getEmail());
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(Map.of("message", "User registered successfully"));
