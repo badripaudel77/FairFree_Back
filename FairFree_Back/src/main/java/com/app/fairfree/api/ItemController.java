@@ -55,7 +55,6 @@ public class ItemController {
     //  Get All Available Items
     @GetMapping("/available")
     public ResponseEntity<List<Item>> getAllAvailableItems() {
-        System.out.println("getting all item.s");
         return ResponseEntity.ok(itemService.getAllAvailableItems());
     }
 

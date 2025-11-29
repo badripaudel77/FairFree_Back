@@ -28,7 +28,7 @@ public class Item {
     private String description;
 
     // store multiple image URLs
-    @ElementCollection
+    @ElementCollection // acts as cascade = ALL
     @CollectionTable(name = "item_images", joinColumns = @JoinColumn(name = "item_id"))
     @Column(name = "image_url", length = 1024)
     @Builder.Default
