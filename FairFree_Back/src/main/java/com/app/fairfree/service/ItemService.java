@@ -55,22 +55,11 @@ public class ItemService {
                 .expiresAfterDays(expiresAfterDays)
                 .build();
 
-        Item savedItem = itemRepository.save(item);
         // Saving uploaded image URLs in a separate ItemImage table
         if (!uploadedImageUrls.isEmpty()) {
-            List<ItemImage> imageEntities = uploadedImageUrls.stream()
-                    .map(url -> ItemImage.builder()
-                            .imageUrl(url)
-                            .item(savedItem)
-                            .build())
-                    .toList();
-            imageItemRepository.saveAll(imageEntities);
-
-            List<String> urls = imageEntities.stream()
-                    .map(ItemImage::getImageUrl)
-                    .toList();
-            savedItem.setImageUrls(urls);
+            item.setImageUrls(uploadedImageUrls);
         }
+        Item savedItem = itemRepository.save(item);
         ItemResponse response = new ItemResponse(savedItem.getId(), savedItem.getName(), savedItem.getLocation(),
                 savedItem.getImageUrls(), savedItem.getStatus(), savedItem.getOwner().getId(), null,
                 savedItem.getOwner().getFullName(), savedItem.getExpiresAfterDays(), savedItem.getNeverExpires());

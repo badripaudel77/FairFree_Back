@@ -7,6 +7,8 @@ import com.app.fairfree.model.Item;
 import com.app.fairfree.model.User;
 import com.app.fairfree.repository.UserRepository;
 import com.app.fairfree.service.ItemService;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -28,21 +30,23 @@ public class ItemController {
     private final ItemService itemService;
     private final UserRepository userRepository;
 
-    // TODO: NOT working. Need To Fix
     // Authenticated user can add item.
     // Add item for tracking and for donation.
-    //  Add Item, including upto three images.
-    @PostMapping(value = "", consumes = { "multipart/form-data" })
-   // @PreAuthorize("hasRole('USER')")
+    // Add Item, including upto three images.
+    // When multipart data is added, itemToBeAdded is String, otherwise client tool may set content type different causing problem.
+    // @PreAuthorize("hasRole('USER')")
+    @PostMapping(value = "", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ItemResponse> addItem(
             @AuthenticationPrincipal UserDetails userDetails,
-            @RequestPart ItemRequest itemToBeAdded,
-            @RequestPart(value = "images", required = false) List<MultipartFile> images) {
+            @RequestPart String itemToBeAddedString,
+            @RequestPart(value = "images", required = false) List<MultipartFile> images) throws JsonProcessingException {
         // Passing @AuthenticationPrincipal UserDetails userDetails, is same as this.
         // Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        // authentication.getName();
         User user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found"));
+
+        ObjectMapper mapper = new ObjectMapper();
+        ItemRequest itemToBeAdded = mapper.readValue(itemToBeAddedString, ItemRequest.class);
 
         ItemResponse item = itemService.addItem(user, itemToBeAdded, images);
         return ResponseEntity.status(HttpStatus.CREATED).body(item);
