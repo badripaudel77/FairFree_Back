@@ -41,7 +41,7 @@ FairFree helps individuals, households, and organizations track item expiration 
 - Java **24.0.1**
 - Spring Boot
 - Maven
-- Auth0 Authentication
+- JWT Authentication
 - Spring Security
 - RESTful API
 
