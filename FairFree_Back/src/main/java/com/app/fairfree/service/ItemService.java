@@ -9,10 +9,12 @@ import com.app.fairfree.model.User;
 import com.app.fairfree.repository.ImageItemRepository;
 import com.app.fairfree.repository.ItemRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -122,5 +124,25 @@ public class ItemService {
 
     public List<Item> getItemsByUser(User user) {
         return itemRepository.findByOwner(user);
+    }
+
+    @Value("${notification.items.expiring-days}")
+    private int expiringDays;
+
+    public List<Item> getExpiringItems() {
+
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime future = now.plusDays(expiringDays);
+
+        List<Item> items = itemRepository
+                .findByNeverExpiresFalseAndExpiresAfterDaysIsNotNull();
+
+        return items.stream()
+                .filter(item -> {
+                    LocalDateTime expirationDate =
+                            item.getCreatedAt().plusDays(item.getExpiresAfterDays());
+                    return expirationDate.isAfter(now) && expirationDate.isBefore(future);
+                })
+                .toList();
     }
 }

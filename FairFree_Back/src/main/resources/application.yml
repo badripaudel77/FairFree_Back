@@ -26,6 +26,17 @@ spring:
       max-file-size: 10MB
       max-request-size: 10MB
 
+  mail:
+    host: smtp.gmail.com
+    port: 465
+    username: ${MAIL_USERNAME:fairfree.app@gmail.com}
+    password: ${MAIL_PASSWORD:bwlynuqomhlkesep}
+    protocol: smtps
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+      mail.smtps.ssl.trust: smtp.gmail.com
+
 # AWS S3 Credentials
 # Access and Secret Key are injected with as env variables.
 aws:
@@ -52,3 +63,11 @@ logging:
   level:
     org.hibernate.SQL: DEBUG
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+
+
+notification:
+  items:
+    expiring-days: 5 # 5 days
+
+
+
