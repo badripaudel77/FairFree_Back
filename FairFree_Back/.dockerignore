@@ -1,0 +1,57 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Maven
+target/
+.m2/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+*.iml
+.classpath
+.project
+.settings/
+
+# Build
+.gradle/
+build/
+out/
+
+# Logs
+logs/
+*.log
+
+# Node (if using frontend)
+node_modules/
+npm-debug.log
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Documentation
+README.md
+SETUP.md
+docs/
+
+# Test files
+src/test/
+*.test.js
+*.spec.js
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
