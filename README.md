@@ -25,7 +25,7 @@ FairFree helps individuals, households, and organizations track item expiration 
 
 ## 🧩 Features (Backend)
 
-- 🧾 **User & Role Management** (Auth0 integrated)
+- 🧾 **User & Role Management** (Spring Security and JWT)
 - 🍎 **Item Tracking** (create, update, expiration management)
 - 🎁 **Donation & Claim System**
 - 🔔 **Notification Engine** for expiring items
