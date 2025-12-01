@@ -3,6 +3,8 @@ package com.app.fairfree.util;
 import com.app.fairfree.model.Item;
 import com.app.fairfree.service.ItemService;
 import com.app.fairfree.service.NotificationService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -22,13 +24,14 @@ public class ScheduledNotificationTask {
     private final NotificationService notificationService;
 
     private final ItemService itemService;
+    private Logger logger = LoggerFactory.getLogger(this.getClass());
 
     public ScheduledNotificationTask(NotificationService notificationService, ItemService itemService) {
         this.notificationService = notificationService;
         this.itemService = itemService;
     }
 
-    @Scheduled(cron = "0 13 20 * * *")
+    @Scheduled(cron = "0 20 14 * * *")
     public void checkExpiringItems() {
         List<Item> items = itemService.getExpiringItems();
         for (Item item : items) {
@@ -39,6 +42,7 @@ public class ScheduledNotificationTask {
 
                 String subject = "Expiring Items Alert";
                 notificationService.sendEmailNotification(item.getOwner().getEmail(), subject, message);
+                logger.info("Expiration notification to {} sent at {}", item.getOwner().getFullName(), item.getOwner().getEmail());
         }
     }
 

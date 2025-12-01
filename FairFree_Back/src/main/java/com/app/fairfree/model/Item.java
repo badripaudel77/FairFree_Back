@@ -43,7 +43,7 @@ public class Item {
 
     private LocalDateTime updatedAt;
     private Integer expiresAfterDays; // Expiration of the item, can be used for reminders email
-    private Boolean neverExpires;
+    private Boolean neverExpires = false;
 
 
     @ManyToOne
