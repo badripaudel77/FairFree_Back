@@ -12,4 +12,6 @@ import java.util.List;
 public interface ItemRepository extends JpaRepository<Item, Long> {
     List<Item> findByStatus(ItemStatus status);
     List<Item> findByOwner(User owner);
+
+    List<Item> findByNeverExpiresFalseAndExpiresAfterDaysIsNotNull();
 }

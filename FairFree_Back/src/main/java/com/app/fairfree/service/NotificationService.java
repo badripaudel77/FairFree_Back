@@ -1,4 +1,7 @@
 package com.app.fairfree.service;
+import com.app.fairfree.model.Notification;
+import com.app.fairfree.model.User;
+import com.app.fairfree.repository.NotificationRepository;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import org.springframework.beans.factory.annotation.Value;
@@ -12,15 +15,27 @@ public class NotificationService {
 
 
     private final JavaMailSender mailSender;
+    private final NotificationRepository notificationRepository;
 
     @Value("${spring.mail.username}")
     private String fromAddress;
 
-    public NotificationService(JavaMailSender mailSender) {
+    public NotificationService(JavaMailSender mailSender, NotificationRepository notificationRepository) {
         this.mailSender = mailSender;
+        this.notificationRepository = notificationRepository;
     }
 
-    public void sendNotification(String to, String subject, String message) {
+    public Notification pushNotification(User user, String message) {
+        Notification notification = Notification.builder()
+                .user(user)
+                .message(message)
+                .read(false) // just to be explicit
+                .build();
+
+        return notificationRepository.save(notification);
+    }
+
+    public void sendEmailNotification(String to, String subject, String message) {
         try {
             MimeMessage mimeMessage = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");

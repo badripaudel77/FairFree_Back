@@ -21,7 +21,7 @@ public class NotificationController {
     @GetMapping("/test-email")
     public ResponseEntity<String> testEmail(@RequestParam String to) {
         try {
-            notificationService.sendNotification(
+            notificationService.sendEmailNotification(
                     to,
                     "Test Email",
                     "This is a test email from your Spring Boot application!"

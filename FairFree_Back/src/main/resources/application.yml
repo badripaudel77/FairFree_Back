@@ -65,4 +65,9 @@ logging:
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE
 
 
+notification:
+  items:
+    expiring-days: 5 # 5 days
+
+
 
