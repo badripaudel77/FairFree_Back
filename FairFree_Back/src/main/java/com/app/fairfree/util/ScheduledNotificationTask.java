@@ -5,17 +5,12 @@ import com.app.fairfree.service.ItemService;
 import com.app.fairfree.service.NotificationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
-
-import static java.time.temporal.ChronoUnit.DAYS;
 
 
 @Component
@@ -37,7 +32,7 @@ public class ScheduledNotificationTask {
         for (Item item : items) {
                 LocalDateTime expiration = item.getCreatedAt().plusDays(item.getExpiresAfterDays());
                 long daysLeft = ChronoUnit.DAYS.between(LocalDateTime.now(), expiration);
-                String message = item.getName() + " will expire with in " + daysLeft + " days.";
+                String message = item.getTitle() + " will expire with in " + daysLeft + " days.";
                 notificationService.pushNotification(item.getOwner(), message);
 
                 String subject = "Expiring Items Alert";

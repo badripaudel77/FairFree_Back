@@ -23,18 +23,16 @@ public class Item {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String name;
-
+    private String title;
     private String description;
+    private Integer quantity;
 
     @OneToMany(mappedBy = "item", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ItemImage> images = new ArrayList<>();
 
-    // latitude / longitude (for location queries & map display)
-    private Double latitude;
-    private Double longitude;
-
-    private String location; // location of the item (to show on map).
+    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "location_id", referencedColumnName = "id")
+    private ItemLocation location;    // Separate table for better geo queries later
 
     @Enumerated(EnumType.STRING)
     private ItemStatus status;
@@ -53,6 +51,10 @@ public class Item {
     @ManyToOne
     @JoinColumn(name = "receiver_id")
     private User receiver;
+
+    // One item -> many claim requests
+    @OneToMany(mappedBy = "item", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Claim> claims = new ArrayList<>();
 
     @PrePersist
     protected void onCreate() {

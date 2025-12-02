@@ -1,11 +1,8 @@
 package com.app.fairfree.service;
 
-import com.app.fairfree.dto.ItemRequest;
-import com.app.fairfree.dto.ItemResponse;
-import com.app.fairfree.model.Item;
+import com.app.fairfree.dto.*;
+import com.app.fairfree.model.*;
 import com.app.fairfree.enums.ItemStatus;
-import com.app.fairfree.model.ItemImage;
-import com.app.fairfree.model.User;
 import com.app.fairfree.repository.ImageItemRepository;
 import com.app.fairfree.repository.ItemRepository;
 import lombok.RequiredArgsConstructor;
@@ -15,10 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -31,17 +25,27 @@ public class ItemService {
     @Transactional
     public ItemResponse addItem(User user, ItemRequest itemRequest, List<MultipartFile> images) {
         int expiresAfterDays = itemRequest.neverExpires() ? Integer.MAX_VALUE : itemRequest.expiresAfterDays();
+            // Build Location entity
+            ItemLocation location = ItemLocation.builder()
+                .address(itemRequest.location().address())
+                .city(itemRequest.location().city())
+                .state(itemRequest.location().state())
+                .country(itemRequest.location().country())
+                .latitude(itemRequest.location().latitude())
+                .longitude(itemRequest.location().longitude())
+                .build();
 
-        Item item = Item.builder()
-                .name(itemRequest.name())
+            // Build Item entity
+            Item item = Item.builder()
+                .title(itemRequest.title())
                 .description(itemRequest.description())
-                .location(itemRequest.location())
-                .latitude(itemRequest.latitude())
-                .longitude(itemRequest.longitude())
-                .status(ItemStatus.PRIVATE)
+                .quantity(itemRequest.quantity())
+                .status(ItemStatus.PRIVATE) // by default private.
                 .owner(user)
                 .receiver(null)
-                .expiresAfterDays(expiresAfterDays)
+                .neverExpires(itemRequest.neverExpires())
+                .expiresAfterDays(itemRequest.neverExpires() ? null : itemRequest.expiresAfterDays())
+                .location(location)
                 .build();
 
         // Save item first to get its ID for S3 folder organization
@@ -69,61 +73,224 @@ public class ItemService {
                 .map(ItemImage::getImageUrl)
                 .toList();
 
+        List<ClaimResponse> claimResponses = Optional.ofNullable(savedItem.getClaims())
+                .orElse(Collections.emptyList())
+                .stream()
+                .map(ClaimResponse::from)
+                .toList();
+        UserResponse ownerResponse = new UserResponse(
+                savedItem.getOwner().getId(),
+                savedItem.getOwner().getFullName(),
+                savedItem.getOwner().getEmail()
+        );
+
         return new ItemResponse(
                 savedItem.getId(),
-                savedItem.getName(),
-                savedItem.getLocation(),
-                imageUrls,             // pass only URLs to frontend
+                savedItem.getTitle(),
+                savedItem.getDescription(),
+                savedItem.getQuantity(),
+                LocationResponse.from(savedItem.getLocation()),
+                imageUrls,
                 savedItem.getStatus(),
-                savedItem.getOwner().getId(),
-                null,
-                savedItem.getOwner().getFullName(),
+                ownerResponse,  // pass owner object
+                null,           // receiver
                 savedItem.getExpiresAfterDays(),
-                savedItem.getNeverExpires()
+                savedItem.getNeverExpires(),
+                claimResponses
+        );
+
+    }
+
+    public List<ItemResponse> getAllAvailableItems() {
+        List<Item> items = itemRepository.findByStatus(ItemStatus.AVAILABLE);
+
+        return items.stream().map(item -> {
+            List<String> imageUrls = Optional.ofNullable(item.getImages())
+                    .orElse(Collections.emptyList())
+                    .stream()
+                    .map(ItemImage::getImageUrl)
+                    .toList();
+
+            List<ClaimResponse> claimResponses = Optional.ofNullable(item.getClaims())
+                    .orElse(Collections.emptyList())
+                    .stream()
+                    .map(ClaimResponse::from)
+                    .toList();
+
+            UserResponse ownerResponse = new UserResponse(
+                    item.getOwner().getId(),
+                    item.getOwner().getFullName(),
+                    item.getOwner().getEmail()
+            );
+
+            UserResponse receiverResponse = item.getReceiver() != null
+                    ? new UserResponse(item.getReceiver().getId(), item.getReceiver().getFullName(), item.getReceiver().getEmail())
+                    : null;
+
+            return new ItemResponse(
+                    item.getId(),
+                    item.getTitle(),
+                    item.getDescription(),
+                    item.getQuantity(),
+                    LocationResponse.from(item.getLocation()),
+                    imageUrls,
+                    item.getStatus(),
+                    ownerResponse,
+                    receiverResponse,
+                    item.getExpiresAfterDays(),
+                    item.getNeverExpires(),
+                    claimResponses
+            );
+        }).toList();
+    }
+
+
+    @Transactional
+    public ItemResponse updateStatus(Long itemId, ItemStatus newStatus) {
+        Item updatedItem = itemRepository.findById(itemId)
+                .map(item -> {
+                    item.setStatus(newStatus);
+                    return item;
+                })
+                .orElseThrow(() -> new RuntimeException("Item Not found."));
+
+        // Convert updated entity to ItemResponse
+        List<String> imageUrls = Optional.ofNullable(updatedItem.getImages())
+                .orElse(Collections.emptyList())
+                .stream()
+                .map(ItemImage::getImageUrl)
+                .toList();
+
+        List<ClaimResponse> claimResponses = Optional.ofNullable(updatedItem.getClaims())
+                .orElse(Collections.emptyList())
+                .stream()
+                .map(ClaimResponse::from)
+                .toList();
+
+        UserResponse ownerResponse = UserResponse.from(updatedItem.getOwner());
+        UserResponse receiverResponse = updatedItem.getReceiver() != null
+                ? UserResponse.from(updatedItem.getReceiver())
+                : null;
+
+        return new ItemResponse(
+                updatedItem.getId(),
+                updatedItem.getTitle(),
+                updatedItem.getDescription(),
+                updatedItem.getQuantity(),
+                LocationResponse.from(updatedItem.getLocation()),
+                imageUrls,
+                updatedItem.getStatus(),
+                ownerResponse,
+                receiverResponse,
+                updatedItem.getExpiresAfterDays(),
+                updatedItem.getNeverExpires(),
+                claimResponses
         );
     }
 
-    public List<Item> getAllAvailableItems() {
-        return itemRepository.findByStatus(ItemStatus.AVAILABLE);
-    }
-
     @Transactional
-    public Item updateStatus(Long itemId, ItemStatus newStatus) {
-        return itemRepository.findById(itemId)
-                        .map(item -> {
-                           item.setStatus(newStatus);
-                           return item;
-                        })
-                .orElseThrow(() -> new RuntimeException("Item Not found."));
-    }
-
-    @Transactional
-    public Item deleteItem(Long itemId, User owner) {
-        return itemRepository.findById(itemId)
+    public Boolean deleteItem(Long itemId, User owner) {
+        itemRepository.findById(itemId)
                 .map(item -> {
                     if (!item.getOwner().getId().equals(owner.getId())) {
                         throw new RuntimeException("You are not authorized to delete this item");
                     }
+                    // notify claimants of this itme
+                    List<Claim> claims = Optional.ofNullable(item.getClaims())
+                            .orElse(Collections.emptyList());
+                    for (Claim claim : claims) {
+                        // TODO: Notify the claimants if needed.
+                    }
                     // Get all image keys associated with the item
-                    List<String> imageKeys = item.getImages().stream()
+                    List<String> imageKeys = Optional.ofNullable(item.getImages())
+                            .orElse(Collections.emptyList())
+                            .stream()
                             .map(ItemImage::getImageKey)
                             .toList();
                     // Delete images from S3
                     fileService.deleteImages(imageKeys);
-
-                    // Delete item from DB (this will cascade to ItemImage if properly mapped)
+                    // Delete item from DB (this will cascade to ItemImage and Claim)
                     itemRepository.delete(item);
                     return item;
                 })
                 .orElseThrow(() -> new RuntimeException("Item not found"));
+        return true;
     }
 
-    public Optional<Item> getItemById(Long itemId) {
-        return itemRepository.findById(itemId);
+
+    public Optional<ItemResponse> getItemById(Long itemId) {
+        return itemRepository.findById(itemId)
+                .map(item -> {
+                    List<String> imageUrls = Optional.ofNullable(item.getImages())
+                            .orElse(Collections.emptyList())
+                            .stream()
+                            .map(ItemImage::getImageUrl)
+                            .toList();
+                    List<ClaimResponse> claimResponses = Optional.ofNullable(item.getClaims())
+                            .orElse(Collections.emptyList())
+                            .stream()
+                            .map(ClaimResponse::from)
+                            .toList();
+
+                    UserResponse ownerResponse = UserResponse.from(item.getOwner());
+                    UserResponse receiverResponse = item.getReceiver() != null
+                            ? UserResponse.from(item.getReceiver())
+                            : null;
+                    return new ItemResponse(
+                            item.getId(),
+                            item.getTitle(),
+                            item.getDescription(),
+                            item.getQuantity(),
+                            LocationResponse.from(item.getLocation()),
+                            imageUrls,
+                            item.getStatus(),
+                            ownerResponse,
+                            receiverResponse,
+                            item.getExpiresAfterDays(),
+                            item.getNeverExpires(),
+                            claimResponses
+                    );
+                });
     }
 
-    public List<Item> getItemsByUser(User user) {
-        return itemRepository.findByOwner(user);
+    public List<ItemResponse> getItemsByUser(User user) {
+        List<Item> items = itemRepository.findByOwner(user);
+
+        return items.stream().map(item -> {
+            List<String> imageUrls = Optional.ofNullable(item.getImages())
+                    .orElse(Collections.emptyList())
+                    .stream()
+                    .map(ItemImage::getImageUrl)
+                    .toList();
+            List<ClaimResponse> claimResponses = Optional.ofNullable(item.getClaims())
+                    .orElse(Collections.emptyList())
+                    .stream()
+                    .map(ClaimResponse::from)
+                    .toList();
+            UserResponse ownerResponse = new UserResponse(
+                    item.getOwner().getId(),
+                    item.getOwner().getFullName(),
+                    item.getOwner().getEmail()
+            );
+            UserResponse receiverResponse = item.getReceiver() != null
+                    ? new UserResponse(item.getReceiver().getId(), item.getReceiver().getFullName(), item.getReceiver().getEmail())
+                    : null;
+
+            return new ItemResponse(
+                    item.getId(),
+                    item.getTitle(),
+                    item.getDescription(),
+                    item.getQuantity(),
+                    LocationResponse.from(item.getLocation()),
+                    imageUrls,
+                    item.getStatus(),
+                    ownerResponse,
+                    receiverResponse,
+                    item.getExpiresAfterDays(),
+                    item.getNeverExpires(),
+                    claimResponses
+            );
+        }).toList();
     }
 
     @Value("${notification.items.expiring-days}")

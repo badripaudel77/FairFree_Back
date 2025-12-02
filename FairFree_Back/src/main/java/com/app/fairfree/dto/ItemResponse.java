@@ -9,12 +9,14 @@ import java.util.List;
 public record ItemResponse(
         Long id,
         String name,
-        String location,
+        String description,
+        Integer quantity,
+        LocationResponse location,
         List<String> imageUrls,
         ItemStatus status,
-        Long ownerId,
-        Long receiverId,
-        String ownerName,
+        UserResponse owner,         //  owner
+        UserResponse receiver,      // receiver, null if not claimed
         Integer expiresAfterDays,
-        Boolean neverExpires
+        Boolean neverExpires,
+        List<ClaimResponse> claims
 ) {}

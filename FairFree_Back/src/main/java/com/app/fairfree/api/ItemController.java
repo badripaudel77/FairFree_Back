@@ -54,13 +54,13 @@ public class ItemController {
 
     //  Get All Available Items
     @GetMapping("/available")
-    public ResponseEntity<List<Item>> getAllAvailableItems() {
+    public ResponseEntity<List<ItemResponse>> getAllAvailableItems() {
         return ResponseEntity.ok(itemService.getAllAvailableItems());
     }
 
     // Get Items by specific User
     @GetMapping("/my-items")
-    public ResponseEntity<List<Item>> getItemsByUser(@AuthenticationPrincipal UserDetails userDetails) {
+    public ResponseEntity<List<ItemResponse>> getItemsByUser(@AuthenticationPrincipal UserDetails userDetails) {
         User user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found"));
         return ResponseEntity.ok(itemService.getItemsByUser(user));
@@ -68,7 +68,7 @@ public class ItemController {
 
     //Get Item by ID
     @GetMapping("/{itemId}")
-    public ResponseEntity<Item> getItemById(@PathVariable Long itemId) {
+    public ResponseEntity<ItemResponse> getItemById(@PathVariable Long itemId) {
         return itemService.getItemById(itemId)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
@@ -76,25 +76,23 @@ public class ItemController {
 
     // Update Item Status
     @PatchMapping("/{itemId}/status")
-    public ResponseEntity<Item> updateItemStatus(
+    public ResponseEntity<ItemResponse> updateItemStatus(
             @PathVariable Long itemId,
             @RequestParam ItemStatus status
     ) {
-        Item updatedItem = itemService.updateStatus(itemId, status);
+        ItemResponse updatedItem = itemService.updateStatus(itemId, status);
         return ResponseEntity.ok(updatedItem);
     }
 
     // Delete Item
     @DeleteMapping("/{itemId}")
-    public ResponseEntity<String> deleteItem(
+    public ResponseEntity<Boolean> deleteItem(
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable Long itemId
     ) {
         User user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found"));
-
-        itemService.deleteItem(itemId, user);
-        return ResponseEntity.ok("Item deleted successfully");
+        return ResponseEntity.ok(itemService.deleteItem(itemId, user));
     }
 
 }
