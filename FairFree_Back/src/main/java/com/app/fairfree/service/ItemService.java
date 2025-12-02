@@ -205,14 +205,16 @@ public class ItemService {
                     if (!item.getOwner().getId().equals(owner.getId())) {
                         throw new RuntimeException("You are not authorized to delete this item");
                     }
-                    // notify claimants of this itme
+                    // notify claimants of this item
                     List<Claim> claims = Optional.ofNullable(item.getClaims())
                             .orElse(Collections.emptyList());
                     for (Claim claim : claims) {
                         // Notify the claimants if that item was removed or deleted.
+                        String message = claim.getItem().getOwner().getFullName()
+                                + " no longer donating the item you claimed.";
                         notificationService.sendEmailNotification(claim.getUser().getEmail(),
-                                "Item has been deleted by the owner", claim.getItem().getOwner().getFullName()
-                                        + " no longer donating the item you claimed.");
+                                "Item has been deleted by the owner", message);
+                        notificationService.pushNotification(claim.getUser(), message);
                     }
                     // Get all image keys associated with the item
                     List<String> imageKeys = Optional.ofNullable(item.getImages())
@@ -252,8 +254,10 @@ public class ItemService {
             itemRepository.save(item);
         }
         // Notify the owner that someone has claimed it.
+        String message = claim.getUser().getFullName() + " claimed for your donation.";
         notificationService.sendEmailNotification(claim.getItem().getOwner().getEmail(),
-                "Your item has been claimed", claim.getUser().getFullName() + " claimed for your donation.");
+                "Your item has been claimed", message);
+        notificationService.pushNotification(claim.getUser(), message);
         return ClaimResponse.from(claim);
     }
 
@@ -278,8 +282,10 @@ public class ItemService {
             itemRepository.save(item);
         }
         // Notify the claimer that owner has declined your claim
+        String message = claim.getItem().getOwner().getFullName() + " denied your claim.";
         notificationService.sendEmailNotification(claim.getItem().getOwner().getEmail(),
-                "Claim Declined by the owner", claim.getItem().getOwner().getFullName() + " denied your claim.");
+                "Claim Declined by the owner", message);
+        notificationService.pushNotification(claim.getItem().getOwner(), message);
 
         return ClaimResponse.from(claim);
     }
@@ -306,14 +312,18 @@ public class ItemService {
         // Notify claimants, approval for the one with approved and declined for others
         for (Claim c : item.getClaims()) {
             if (Objects.equals(c.getId(), claim.getId())) {
+                String message = claim.getItem().getOwner().getFullName()
+                        + " has approved your claim. Please pick it up from the location.";
                 notificationService.sendEmailNotification(claim.getUser().getEmail(),
-                        "Your claim has been approved", claim.getItem().getOwner().getFullName()
-                                + " has approved your claim. Please pick it up from the location.");
+                        "Your claim has been approved", message);
+                notificationService.pushNotification(claim.getUser(), message);
             }
             else {
+                String message = claim.getItem().getOwner().getFullName()
+                        + " didn't approve your claim.";
                 notificationService.sendEmailNotification(claim.getUser().getEmail(),
-                        "Your claim was not approved", claim.getItem().getOwner().getFullName()
-                                + " didn't approve your claim.");
+                        "Your claim was not approved", message);
+                notificationService.pushNotification(claim.getUser(), message);
             }
         }
         return ClaimResponse.from(claim);
@@ -337,8 +347,11 @@ public class ItemService {
             itemRepository.save(item);
         }
         // Notify the owner that user has canceled their clam.
+        String message = claim.getUser().getFullName() + " removed their claim for the item.";
         notificationService.sendEmailNotification(claim.getItem().getOwner().getEmail(),
-                "User removed their claim for the item.", claim.getUser().getFullName() + " removed their claim for the item.");
+                "User removed their claim for the item.", message);
+        notificationService.pushNotification(claim.getItem().getOwner(), message);
+
         return ClaimResponse.from(claim);
     }
 
