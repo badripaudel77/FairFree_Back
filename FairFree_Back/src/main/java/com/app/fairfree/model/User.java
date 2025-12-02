@@ -35,6 +35,12 @@ public class User {
 
     private LocalDateTime lastActive;
 
+    private String avatarUrl;
+
+    private String bio;
+
+    private String location;
+
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "user_roles",
@@ -43,5 +49,13 @@ public class User {
     )
     @Builder.Default
     private Set<Role> roles = new HashSet<>();
+
+    @PrePersist
+    public void setDefaults() {
+        if (this.avatarUrl == null) {
+            this.avatarUrl = "/assets/default-avatar.png";
+        }
+    }
+
 }
 

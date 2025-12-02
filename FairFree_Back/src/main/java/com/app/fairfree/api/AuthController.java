@@ -12,6 +12,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
@@ -85,6 +87,24 @@ public class AuthController {
                 "roles", roles,
                 "token", token
         ));
+    }
+
+    /**
+     * Map the authenticated principal (JWT) to our User.id.
+     * JwtService uses the email as the subject, so Authentication.getName() is the email.
+     */
+    protected Long getCurrentUserId() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
+        if (auth == null || !auth.isAuthenticated()) {
+            return null; // or throw if feed must always be authenticated
+        }
+
+        String email = auth.getName(); // this is what you put into jwtService.generateToken(...)
+
+        return userRepository.findByEmail(email)
+                .map(User::getId)
+                .orElse(null); // could throw if you prefer strict behaviour
     }
 }
 

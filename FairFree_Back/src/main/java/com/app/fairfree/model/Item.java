@@ -56,6 +56,20 @@ public class Item {
     @OneToMany(mappedBy = "item", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Claim> claims = new ArrayList<>();
 
+    /** Category for feed UI */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id")
+    private Category category;
+
+    /** Likes associated with the item */
+    @OneToMany(mappedBy = "item", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Like> likes = new ArrayList<>();
+
+    /** Comments associated with the item */
+    @OneToMany(mappedBy = "item", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Comment> comments = new ArrayList<>();
+
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
