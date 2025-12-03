@@ -442,13 +442,17 @@ public class ItemService {
         }).toList();
     }
 
+
+    @Value("${notification.items.expiring-days}")
+    private int expiringDays;
+
     public List<Item> getExpiringItems() {
 
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime future = now.plusDays(expiringDays);
 
         List<Item> items = itemRepository
-                .findByNeverExpiresFalseAndExpiresAfterDaysIsNotNull();
+                .findByNeverExpiresFalseAndExpiresAfterDaysIsNotNullAndStatusNot(ItemStatus.EXPIRED);
 
         return items.stream()
                 .filter(item -> {
