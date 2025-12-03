@@ -1,17 +1,23 @@
 package com.app.fairfree.service;
+import com.app.fairfree.dto.ItemResponse;
+import com.app.fairfree.dto.NotificationResponse;
 import com.app.fairfree.model.Notification;
 import com.app.fairfree.model.User;
 import com.app.fairfree.repository.NotificationRepository;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
+import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class NotificationService {
-
 
     private final JavaMailSender mailSender;
     private final NotificationRepository notificationRepository;
@@ -22,6 +28,26 @@ public class NotificationService {
     public NotificationService(JavaMailSender mailSender, NotificationRepository notificationRepository) {
         this.mailSender = mailSender;
         this.notificationRepository = notificationRepository;
+    }
+
+    public List<NotificationResponse> getNotificationByUser(User user) {
+
+        List<Notification> notifications =  notificationRepository.findByUserAndReadFalse(user);
+
+        return notifications.stream()
+                .map(notification -> NotificationResponse.builder()
+                        .id(notification.getId())
+                        .message(notification.getMessage())
+                        .createdAt(notification.getCreatedAt())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public void readNotification(User user) {
+        List<Notification> unreadNotifications = notificationRepository.findByUserAndReadFalse(user);
+        unreadNotifications.forEach(notification -> notification.setRead(true));
+        notificationRepository.saveAll(unreadNotifications);
     }
 
     public Notification pushNotification(User user, String message) {
@@ -67,4 +93,7 @@ public class NotificationService {
                 "</td></tr>" +
                 "</table></body></html>";
     }
+
+
+
 }
