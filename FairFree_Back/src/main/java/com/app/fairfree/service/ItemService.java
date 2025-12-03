@@ -443,9 +443,6 @@ public class ItemService {
     }
 
 
-    @Value("${notification.items.expiring-days}")
-    private int expiringDays;
-
     public List<Item> getExpiringItems() {
 
         LocalDateTime now = LocalDateTime.now();
