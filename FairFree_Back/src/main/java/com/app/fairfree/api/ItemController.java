@@ -1,9 +1,9 @@
 package com.app.fairfree.api;
 
+import com.app.fairfree.dto.ClaimResponse;
 import com.app.fairfree.dto.ItemRequest;
 import com.app.fairfree.dto.ItemResponse;
 import com.app.fairfree.enums.ItemStatus;
-import com.app.fairfree.model.Item;
 import com.app.fairfree.model.User;
 import com.app.fairfree.repository.UserRepository;
 import com.app.fairfree.service.ItemService;
@@ -93,6 +93,41 @@ public class ItemController {
         User user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found"));
         return ResponseEntity.ok(itemService.deleteItem(itemId, user));
+    }
+
+    @PostMapping("/{itemId}/claim")
+    public ResponseEntity<ClaimResponse> claimItem(
+            @PathVariable Long itemId, @AuthenticationPrincipal UserDetails claimant) {
+        ClaimResponse response = itemService.claimItem(itemId, claimant);
+        return ResponseEntity.ok(response);
+    }
+
+    // Decline the claim ID
+    @PostMapping("/decline/claims/{claimId}")
+    public ResponseEntity<ClaimResponse> declineClaim(@PathVariable Long claimId, @AuthenticationPrincipal UserDetails owner) {
+        ClaimResponse response = itemService.declineClaim(claimId, owner);
+        return ResponseEntity.ok(response);
+    }
+
+    // Decline the claim ID
+    @PostMapping("/approve/claims/{claimId}")
+    public ResponseEntity<ClaimResponse> approveClaim(@PathVariable Long claimId, @AuthenticationPrincipal UserDetails owner) {
+        ClaimResponse response = itemService.approveClaim(claimId, owner);
+        return ResponseEntity.ok(response);
+    }
+
+    // Cancel the claim (owned claim)
+    @PostMapping("/cancel/claims/{claimId}")
+    public ResponseEntity<ClaimResponse> cancelClaim(@PathVariable Long claimId, @AuthenticationPrincipal UserDetails owner) {
+        ClaimResponse response = itemService.cancelClaim(claimId, owner);
+        return ResponseEntity.ok(response);
+    }
+
+    // Get the claims (owned claims)
+    @GetMapping("/my-claims")
+    public ResponseEntity<List<ClaimResponse>> getMyClaims(@AuthenticationPrincipal UserDetails owner) {
+        List<ClaimResponse> claims = itemService.getClaims(owner);
+        return ResponseEntity.ok(claims);
     }
 
 }

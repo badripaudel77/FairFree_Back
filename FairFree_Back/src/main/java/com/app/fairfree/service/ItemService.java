@@ -1,12 +1,16 @@
 package com.app.fairfree.service;
 
 import com.app.fairfree.dto.*;
+import com.app.fairfree.enums.ClaimStatus;
 import com.app.fairfree.model.*;
 import com.app.fairfree.enums.ItemStatus;
+import com.app.fairfree.repository.ClaimRepository;
 import com.app.fairfree.repository.ImageItemRepository;
 import com.app.fairfree.repository.ItemRepository;
+import com.app.fairfree.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -21,6 +25,12 @@ public class ItemService {
     private final ItemRepository itemRepository;
     private final FileService fileService;
     private final ImageItemRepository imageItemRepository;
+    private final ClaimRepository claimRepository;
+    private final UserRepository userRepository;
+    private final NotificationService notificationService;
+
+    @Value("${notification.items.expiring-days}")
+    private int expiringDays;
 
     @Transactional
     public ItemResponse addItem(User user, ItemRequest itemRequest, List<MultipartFile> images) {
@@ -195,11 +205,16 @@ public class ItemService {
                     if (!item.getOwner().getId().equals(owner.getId())) {
                         throw new RuntimeException("You are not authorized to delete this item");
                     }
-                    // notify claimants of this itme
+                    // notify claimants of this item
                     List<Claim> claims = Optional.ofNullable(item.getClaims())
                             .orElse(Collections.emptyList());
                     for (Claim claim : claims) {
-                        // TODO: Notify the claimants if needed.
+                        // Notify the claimants if that item was removed or deleted.
+                        String message = claim.getItem().getOwner().getFullName()
+                                + " no longer donating the item you claimed.";
+                        notificationService.sendEmailNotification(claim.getUser().getEmail(),
+                                "Item has been deleted by the owner", message);
+                        notificationService.pushNotification(claim.getUser(), message);
                     }
                     // Get all image keys associated with the item
                     List<String> imageKeys = Optional.ofNullable(item.getImages())
@@ -217,6 +232,140 @@ public class ItemService {
         return true;
     }
 
+    // Claim the Item
+    @Transactional
+    public ClaimResponse claimItem(Long itemId, UserDetails claimant) {
+        Item item = itemRepository.findById(itemId)
+                .orElseThrow(() -> new RuntimeException("Item not found"));
+
+        if (item.getOwner().getEmail().equals(claimant.getUsername())) {
+            throw new RuntimeException("Owner cannot claim their own item");
+        }
+        Optional<User> userByEmail = userRepository.findByEmail(claimant.getUsername());
+        Claim claim = Claim.builder()
+                .item(item)
+                .user(userByEmail.get())
+                .status(ClaimStatus.PENDING)
+                .build();
+        item.getClaims().add(claim);
+        claimRepository.save(claim);
+        if (item.getStatus() == ItemStatus.AVAILABLE) {
+            item.setStatus(ItemStatus.ON_HOLD);
+            itemRepository.save(item);
+        }
+        // Notify the owner that someone has claimed it.
+        String message = claim.getUser().getFullName() + " claimed for your donation.";
+        notificationService.sendEmailNotification(claim.getItem().getOwner().getEmail(),
+                "Your item has been claimed", message);
+        notificationService.pushNotification(claim.getUser(), message);
+        return ClaimResponse.from(claim);
+    }
+
+    @Transactional
+    public ClaimResponse declineClaim(Long claimId, UserDetails owner) {
+        Claim claim = claimRepository.findById(claimId)
+                .orElseThrow(() -> new RuntimeException("Claim not found"));
+        Item item = claim.getItem();
+        if (!item.getOwner().getEmail().equals(owner.getUsername())) {
+            throw new RuntimeException("Not authorized to decline this claim");
+        }
+        if(claim.getStatus() != ClaimStatus.PENDING) {
+            throw new RuntimeException("Can't decline, the claim is not in PENDING status.");
+        }
+        claim.setStatus(ClaimStatus.DECLINED);
+        claimRepository.save(claim);
+        // Check if item should go back to AVAILABLE, If no other pending, take back to available.
+        boolean hasPending = item.getClaims().stream()
+                .anyMatch(c -> c.getStatus() == ClaimStatus.PENDING);
+        if (!hasPending && item.getStatus() == ItemStatus.ON_HOLD) {
+            item.setStatus(ItemStatus.AVAILABLE);
+            itemRepository.save(item);
+        }
+        // Notify the claimer that owner has declined your claim
+        String message = claim.getItem().getOwner().getFullName() + " denied your claim.";
+        notificationService.sendEmailNotification(claim.getItem().getOwner().getEmail(),
+                "Claim Declined by the owner", message);
+        notificationService.pushNotification(claim.getItem().getOwner(), message);
+
+        return ClaimResponse.from(claim);
+    }
+
+    @Transactional
+    public ClaimResponse approveClaim(Long claimId, UserDetails owner) {
+        Claim claim = claimRepository.findById(claimId)
+                .orElseThrow(() -> new RuntimeException("Claim not found"));
+        Item item = claim.getItem();
+        if (!item.getOwner().getEmail().equals(owner.getUsername())) {
+            throw new RuntimeException("Not authorized to approve this claim");
+        }
+        // Approve this claim
+        claim.setStatus(ClaimStatus.APPROVED);
+        // Decline all other PENDING claims
+        item.getClaims().stream()
+                .filter(c -> !c.getId().equals(claimId) && c.getStatus() == ClaimStatus.PENDING)
+                .forEach(c -> c.setStatus(ClaimStatus.DECLINED));
+        // Update item
+        item.setStatus(ItemStatus.DONATED);
+        item.setReceiver(claim.getUser());
+        claimRepository.save(claim);
+        itemRepository.save(item);
+        // Notify claimants, approval for the one with approved and declined for others
+        for (Claim c : item.getClaims()) {
+            if (Objects.equals(c.getId(), claim.getId())) {
+                String message = claim.getItem().getOwner().getFullName()
+                        + " has approved your claim. Please pick it up from the location.";
+                notificationService.sendEmailNotification(claim.getUser().getEmail(),
+                        "Your claim has been approved", message);
+                notificationService.pushNotification(claim.getUser(), message);
+            }
+            else {
+                String message = claim.getItem().getOwner().getFullName()
+                        + " didn't approve your claim.";
+                notificationService.sendEmailNotification(claim.getUser().getEmail(),
+                        "Your claim was not approved", message);
+                notificationService.pushNotification(claim.getUser(), message);
+            }
+        }
+        return ClaimResponse.from(claim);
+    }
+
+    @Transactional
+    public ClaimResponse cancelClaim(Long claimId, UserDetails user) {
+        Claim claim = claimRepository.findById(claimId)
+                .orElseThrow(() -> new RuntimeException("Claim not found"));
+        if (!claim.getUser().getEmail().equals(user.getUsername())) {
+            throw new RuntimeException("Not authorized to cancel this claim");
+        }
+        claim.setStatus(ClaimStatus.CANCELLED);
+        claimRepository.save(claim);
+
+        Item item = claim.getItem();
+        boolean hasPending = item.getClaims().stream()
+                .anyMatch(c -> c.getStatus() == ClaimStatus.PENDING);
+        if (!hasPending && item.getStatus() == ItemStatus.ON_HOLD) {
+            item.setStatus(ItemStatus.AVAILABLE);
+            itemRepository.save(item);
+        }
+        // Notify the owner that user has canceled their clam.
+        String message = claim.getUser().getFullName() + " removed their claim for the item.";
+        notificationService.sendEmailNotification(claim.getItem().getOwner().getEmail(),
+                "User removed their claim for the item.", message);
+        notificationService.pushNotification(claim.getItem().getOwner(), message);
+
+        return ClaimResponse.from(claim);
+    }
+
+    // Get the claims of the logged in User
+    @Transactional(readOnly = true)
+    public List<ClaimResponse> getClaims(UserDetails user) {
+        Optional<User> byEmail = userRepository.findByEmail(user.getUsername());
+        List<Claim> claims = claimRepository.findByUser(byEmail.get());
+        return Optional.ofNullable(claims)
+                .orElse(Collections.emptyList())
+                .stream()
+                .map(ClaimResponse::from)
+                .toList();
+    }
 
     public Optional<ItemResponse> getItemById(Long itemId) {
         return itemRepository.findById(itemId)
