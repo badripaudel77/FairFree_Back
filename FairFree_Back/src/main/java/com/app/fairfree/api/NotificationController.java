@@ -1,35 +1,40 @@
 package com.app.fairfree.api;
 
+import com.app.fairfree.dto.NotificationResponse;
+import com.app.fairfree.model.User;
+import com.app.fairfree.repository.UserRepository;
 import com.app.fairfree.service.NotificationService;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
-@RequestMapping(value = "api/v1/public/notification")
+@RequestMapping(value = "api/v1/notification")
 public class NotificationController {
 
     private final NotificationService notificationService;
+    private final UserRepository userRepository;
 
-    public NotificationController(NotificationService notificationService) {
+    public NotificationController(NotificationService notificationService, UserRepository userRepository) {
         this.notificationService = notificationService;
+        this.userRepository = userRepository;
     }
 
-    @GetMapping("/test-email")
-    public ResponseEntity<String> testEmail(@RequestParam String to) {
-        try {
-            notificationService.sendEmailNotification(
-                    to,
-                    "Test Email",
-                    "This is a test email from your Spring Boot application!"
-            );
-            return ResponseEntity.ok("Email sent successfully to " + to);
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError()
-                    .body("Failed to send email: " + e.getMessage());
-        }
+    @GetMapping("/my-notification")
+    public ResponseEntity<List<NotificationResponse>> getNotificationsByUser(@AuthenticationPrincipal UserDetails userDetails) {
+        User user = userRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        return ResponseEntity.ok(notificationService.getNotificationByUser(user));
+    }
+
+    @PutMapping("/read")
+    public ResponseEntity<String> readNotification(@AuthenticationPrincipal UserDetails userDetails) {
+        User user = userRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        notificationService.readNotification(user);
+        return ResponseEntity.ok("Notifications read updated");
     }
 }
