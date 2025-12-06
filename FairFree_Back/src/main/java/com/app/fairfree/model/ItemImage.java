@@ -22,6 +22,7 @@ public class ItemImage {
     @Column(name = "image_key", length = 1024)
     private String imageKey;
 
+    @Column(nullable = false, columnDefinition = "boolean default false")
     private boolean isThumbnail = false;
 
     @ManyToOne(fetch = FetchType.LAZY)
