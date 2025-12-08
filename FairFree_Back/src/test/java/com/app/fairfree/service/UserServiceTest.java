@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @SpringBootTest
-class AuthServiceTest {
+class UserServiceTest {
 
     @Mock
     private UserRepository userRepository;
@@ -50,10 +50,10 @@ class AuthServiceTest {
 
         Role normalRole = new Role(1L, "ROLE_USER");
         User normalUser = User.builder()
-                        .email("user@example.com")
-                        .password("encodedPassword")
-                        .fullName("Normal User")
-                        .build();
+                .email("user@example.com")
+                .password("encodedPassword")
+                .fullName("Normal User")
+                .build();
         normalUser.setRoles(Set.of(normalRole));
 
         when(userRepository.findByEmail("user@example.com")).thenReturn(Optional.of(normalUser));

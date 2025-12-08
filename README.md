@@ -1,4 +1,4 @@
-# 🎡 FairFree – Backend Service
+﻿# 🎡 FairFree – Backend Service
 Backend API for the FairFree community donation and waste-reduction platform.
 
 FairFree helps individuals, households, and organizations track item expiration dates, reduce waste, and donate items to community members in need. This backend provides secure authentication, business logic, notifications, and persistent data management for all system features.
