@@ -2,6 +2,7 @@ package com.app.fairfree.service;
 
 import com.app.fairfree.dto.*;
 import com.app.fairfree.enums.ClaimStatus;
+import com.app.fairfree.enums.NotificationType;
 import com.app.fairfree.model.*;
 import com.app.fairfree.enums.ItemStatus;
 import com.app.fairfree.repository.ClaimRepository;
@@ -34,9 +35,8 @@ public class ItemService {
 
     @Transactional
     public ItemResponse addItem(User user, ItemRequest itemRequest, List<MultipartFile> images) {
-        int expiresAfterDays = itemRequest.neverExpires() ? Integer.MAX_VALUE : itemRequest.expiresAfterDays();
-            // Build Location entity
-            ItemLocation location = ItemLocation.builder()
+        // Build Location entity
+        ItemLocation location = ItemLocation.builder()
                 .address(itemRequest.location().address())
                 .city(itemRequest.location().city())
                 .state(itemRequest.location().state())
@@ -45,8 +45,8 @@ public class ItemService {
                 .longitude(itemRequest.location().longitude())
                 .build();
 
-            // Build Item entity
-            Item item = Item.builder()
+        // Build Item entity
+        Item item = Item.builder()
                 .title(itemRequest.title())
                 .description(itemRequest.description())
                 .quantity(itemRequest.quantity())
@@ -214,7 +214,8 @@ public class ItemService {
                                 + " no longer donating the item you claimed.";
                         notificationService.sendEmailNotification(claim.getUser().getEmail(),
                                 "Item has been deleted by the owner", message);
-                        notificationService.pushNotification(claim.getUser(), message);
+                        // JUST pass as cancelled
+                        notificationService.pushNotification(claim.getUser(), item.getId(), NotificationType.CLAIM_CANCELLED, message);
                     }
                     // Get all image keys associated with the item
                     List<String> imageKeys = Optional.ofNullable(item.getImages())
@@ -257,7 +258,7 @@ public class ItemService {
         String message = claim.getUser().getFullName() + " claimed for your donation.";
         notificationService.sendEmailNotification(claim.getItem().getOwner().getEmail(),
                 "Your item has been claimed", message);
-        notificationService.pushNotification(claim.getUser(), message);
+        notificationService.pushNotification(claim.getUser(), itemId, NotificationType.ITEM_CLAIMED, message);
         return ClaimResponse.from(claim);
     }
 
@@ -269,7 +270,7 @@ public class ItemService {
         if (!item.getOwner().getEmail().equals(owner.getUsername())) {
             throw new RuntimeException("Not authorized to decline this claim");
         }
-        if(claim.getStatus() != ClaimStatus.PENDING) {
+        if (claim.getStatus() != ClaimStatus.PENDING) {
             throw new RuntimeException("Can't decline, the claim is not in PENDING status.");
         }
         claim.setStatus(ClaimStatus.DECLINED);
@@ -282,10 +283,10 @@ public class ItemService {
             itemRepository.save(item);
         }
         // Notify the claimer that owner has declined your claim
-        String message = claim.getItem().getOwner().getFullName() + " denied your claim.";
+        String message = item.getOwner().getFullName() + " denied your claim.";
         notificationService.sendEmailNotification(claim.getItem().getOwner().getEmail(),
                 "Claim Declined by the owner", message);
-        notificationService.pushNotification(claim.getItem().getOwner(), message);
+        notificationService.pushNotification(claim.getUser(), item.getId(), NotificationType.CLAIM_DENIED, message);
 
         return ClaimResponse.from(claim);
     }
@@ -316,14 +317,13 @@ public class ItemService {
                         + " has approved your claim. Please pick it up from the location.";
                 notificationService.sendEmailNotification(claim.getUser().getEmail(),
                         "Your claim has been approved", message);
-                notificationService.pushNotification(claim.getUser(), message);
-            }
-            else {
+                notificationService.pushNotification(claim.getUser(), item.getId(), NotificationType.CLAIM_DENIED, message);
+            } else {
                 String message = claim.getItem().getOwner().getFullName()
                         + " didn't approve your claim.";
                 notificationService.sendEmailNotification(claim.getUser().getEmail(),
                         "Your claim was not approved", message);
-                notificationService.pushNotification(claim.getUser(), message);
+                notificationService.pushNotification(claim.getUser(), item.getId(), NotificationType.CLAIM_APPROVED, message);
             }
         }
         return ClaimResponse.from(claim);
@@ -348,9 +348,9 @@ public class ItemService {
         }
         // Notify the owner that user has canceled their clam.
         String message = claim.getUser().getFullName() + " removed their claim for the item.";
-        notificationService.sendEmailNotification(claim.getItem().getOwner().getEmail(),
+        notificationService.sendEmailNotification(item.getOwner().getEmail(),
                 "User removed their claim for the item.", message);
-        notificationService.pushNotification(claim.getItem().getOwner(), message);
+        notificationService.pushNotification(item.getOwner(), item.getId(), NotificationType.CLAIM_CANCELLED, message);
 
         return ClaimResponse.from(claim);
     }
@@ -444,7 +444,6 @@ public class ItemService {
 
 
     public List<Item> getExpiringItems() {
-
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime future = now.plusDays(expiringDays);
 

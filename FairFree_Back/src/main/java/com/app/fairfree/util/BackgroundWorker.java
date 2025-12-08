@@ -1,6 +1,7 @@
 package com.app.fairfree.util;
 
 import com.app.fairfree.enums.ItemStatus;
+import com.app.fairfree.enums.NotificationType;
 import com.app.fairfree.model.Item;
 import com.app.fairfree.repository.ItemRepository;
 import com.app.fairfree.service.ItemService;
@@ -29,7 +30,7 @@ public class BackgroundWorker extends Thread {
     @Autowired
     ItemService itemService;
 
-    private Logger logger = LoggerFactory.getLogger(this.getClass());
+    private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     @Scheduled(cron = "0 10 23 * * *")
     public void checkExpiringItems() {
@@ -44,7 +45,7 @@ public class BackgroundWorker extends Thread {
                     continue; // Skip notification for already expired items
                 }
                 String message = item.getTitle() + " will expire with in " + daysLeft + " days.";
-                notificationService.pushNotification(item.getOwner(), message);
+                notificationService.pushNotification(item.getOwner(), item.getId(), NotificationType.ITEM_EXPIRED, message);
 
                 String subject = "Expiring Items Alert";
                 notificationService.sendEmailNotification(item.getOwner().getEmail(), subject, message);
