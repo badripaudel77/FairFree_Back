@@ -44,18 +44,23 @@ public class ItemService {
                 .latitude(itemRequest.location().latitude())
                 .longitude(itemRequest.location().longitude())
                 .build();
+        // Set Category if it is null or not.
+        Category category = Optional.ofNullable(itemRequest.category())
+                .map(c -> new Category(c.getId(), c.getName()))
+                .orElse(null);
 
         // Build Item entity
         Item item = Item.builder()
                 .title(itemRequest.title())
                 .description(itemRequest.description())
                 .quantity(itemRequest.quantity())
-                .status(ItemStatus.PRIVATE) // by default private.
+                .status(ItemStatus.AVAILABLE) // by default available.
                 .owner(user)
                 .receiver(null)
                 .neverExpires(itemRequest.neverExpires())
                 .expiresAfterDays(itemRequest.neverExpires() ? null : itemRequest.expiresAfterDays())
                 .location(location)
+                .category(category)
                 .build();
 
         // Save item first to get its ID for S3 folder organization
@@ -106,7 +111,8 @@ public class ItemService {
                 null,           // receiver
                 savedItem.getExpiresAfterDays(),
                 savedItem.getNeverExpires(),
-                claimResponses
+                claimResponses,
+                savedItem.getCategory()
         );
 
     }
@@ -149,7 +155,8 @@ public class ItemService {
                     receiverResponse,
                     item.getExpiresAfterDays(),
                     item.getNeverExpires(),
-                    claimResponses
+                    claimResponses,
+                    item.getCategory()
             );
         }).toList();
     }
@@ -194,7 +201,8 @@ public class ItemService {
                 receiverResponse,
                 updatedItem.getExpiresAfterDays(),
                 updatedItem.getNeverExpires(),
-                claimResponses
+                claimResponses,
+                updatedItem.getCategory()
         );
     }
 
@@ -397,7 +405,8 @@ public class ItemService {
                             receiverResponse,
                             item.getExpiresAfterDays(),
                             item.getNeverExpires(),
-                            claimResponses
+                            claimResponses,
+                            item.getCategory()
                     );
                 });
     }
@@ -437,7 +446,8 @@ public class ItemService {
                     receiverResponse,
                     item.getExpiresAfterDays(),
                     item.getNeverExpires(),
-                    claimResponses
+                    claimResponses,
+                    item.getCategory()
             );
         }).toList();
     }
