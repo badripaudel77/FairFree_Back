@@ -48,6 +48,6 @@ jobs:
                   username: ubuntu
                   key: ${{ secrets.EC2_SSH_KEY }}
                   script: |
-                      cd ~/fairfree
+                      cd ~/fairfree/FairFree_Back
                       docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/fairfree-app:latest
-                      docker compose -f docker-compose.yml.prod up -d
+                      docker compose -f docker-compose.prod.yml up -d
