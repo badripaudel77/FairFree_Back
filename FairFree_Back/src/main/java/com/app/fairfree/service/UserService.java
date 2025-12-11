@@ -46,6 +46,7 @@ public class UserService {
 
         // Response map
         return Map.of(
+                "id", user.getId(),
                 "email", user.getEmail(),
                 "fullName", user.getFullName(),
                 "roles", roles,

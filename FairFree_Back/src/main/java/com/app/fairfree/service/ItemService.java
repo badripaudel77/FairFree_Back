@@ -232,7 +232,7 @@ public class ItemService {
                             .map(ItemImage::getImageKey)
                             .toList();
                     // Delete images from S3
-                    fileService.deleteImages(imageKeys);
+                    // fileService.deleteImages(imageKeys);
                     // Delete item from DB (this will cascade to ItemImage and Claim)
                     itemRepository.delete(item);
                     return item;
@@ -258,15 +258,15 @@ public class ItemService {
                 .build();
         item.getClaims().add(claim);
         claimRepository.save(claim);
-        if (item.getStatus() == ItemStatus.AVAILABLE) {
+        if (item.getStatus() != ItemStatus.DONATED && item.getStatus() != ItemStatus.ON_HOLD) {
             item.setStatus(ItemStatus.ON_HOLD);
             itemRepository.save(item);
         }
         // Notify the owner that someone has claimed it.
         String message = claim.getUser().getFullName() + " claimed for your donation.";
+        notificationService.pushNotification(claim.getItem().getOwner(), itemId, NotificationType.ITEM_CLAIMED, message);
         notificationService.sendEmailNotification(claim.getItem().getOwner().getEmail(),
                 "Your item has been claimed", message);
-        notificationService.pushNotification(claim.getUser(), itemId, NotificationType.ITEM_CLAIMED, message);
         return ClaimResponse.from(claim);
     }
 
@@ -292,7 +292,7 @@ public class ItemService {
         }
         // Notify the claimer that owner has declined your claim
         String message = item.getOwner().getFullName() + " denied your claim.";
-        notificationService.sendEmailNotification(claim.getItem().getOwner().getEmail(),
+        notificationService.sendEmailNotification(claim.getUser().getEmail(),
                 "Claim Declined by the owner", message);
         notificationService.pushNotification(claim.getUser(), item.getId(), NotificationType.CLAIM_DENIED, message);
 
