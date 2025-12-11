@@ -117,8 +117,11 @@ public class ItemService {
 
     }
 
-    public List<ItemResponse> getAllAvailableItems() {
-        List<Item> items = itemRepository.findByStatus(ItemStatus.AVAILABLE);
+    // Retrieve all items that has not been donated yet and placed by other users (not logged in user)
+    public List<ItemResponse> getAllAvailableItems(String username) {
+        User user = userRepository.findByEmail(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        List<Item> items = itemRepository.findAllItemsNotByUser(ItemStatus.DONATED, user.getId());
 
         return items.stream().map(item -> {
             List<String> imageUrls = Optional.ofNullable(item.getImages())
