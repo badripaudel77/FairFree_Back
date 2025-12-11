@@ -38,12 +38,14 @@ FairFree helps individuals, households, and organizations track item expiration 
 ## 🧰 Tech Stack
 
 ### **Backend**
-- Java **24.0.1**
+- Java **25**
 - Spring Boot
 - Maven
 - JWT Authentication
 - Spring Security
 - RESTful API
+- Junit
+- Test Containers
 
 ### **Infrastructure**
 - AWS Elastic Beanstalk
