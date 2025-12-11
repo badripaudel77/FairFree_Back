@@ -38,7 +38,7 @@ jobs:
                   host: ${{ secrets.EC2_HOST }}
                   username: ubuntu
                   key: ${{ secrets.EC2_SSH_KEY }}
-                  source: "FairFree_Back/docker-compose.yml"
+                  source: "FairFree_Back/docker-compose.prod.yml"
                   target: "~/fairfree"
 
             - name: Run compose on EC2
@@ -50,4 +50,4 @@ jobs:
                   script: |
                       cd ~/fairfree
                       docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/fairfree-app:latest
-                      docker-compose -f docker-compose.yml up -d
+                      docker compose -f docker-compose.yml.prod up -d
