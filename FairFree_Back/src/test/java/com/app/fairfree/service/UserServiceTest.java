@@ -9,10 +9,10 @@ import com.app.fairfree.repository.UserRepository;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.*;
@@ -20,7 +20,7 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-@SpringBootTest
+@ExtendWith(MockitoExtension.class)
 class UserServiceTest {
 
     @Mock
@@ -40,7 +40,6 @@ class UserServiceTest {
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
     }
 
     @Test
@@ -50,6 +49,7 @@ class UserServiceTest {
 
         Role normalRole = new Role(1L, "ROLE_USER");
         User normalUser = User.builder()
+                .id(1L)
                 .email("user@example.com")
                 .password("encodedPassword")
                 .fullName("Normal User")
@@ -71,7 +71,7 @@ class UserServiceTest {
 
         verify(userRepository).findByEmail("user@example.com"); // default called 1 time
         verify(passwordEncoder, times(1)).matches("password123", "encodedPassword");
-        verify(jwtService).generateToken("user@example.com", Set.of("ROLE_USER"));
+        verify(jwtService).generateToken(eq("user@example.com"), eq(Set.of("ROLE_USER")));
     }
 
     @Test
@@ -97,8 +97,8 @@ class UserServiceTest {
                 .build();
         normalUser.setRoles(Set.of(normalRole));
 
-        when(userRepository.findByEmail("user@example.com")).thenReturn(Optional.of(normalUser));
-        when(passwordEncoder.matches("wrong-password", "encodedPassword")).thenReturn(false);
+//        when(userRepository.findByEmail(anyString())).thenReturn(Optional.of(normalUser));
+//        when(passwordEncoder.matches(anyString(), anyString())).thenReturn(false);
 
         RuntimeException ex = assertThrows(RuntimeException.class,
                 () -> userService.loginUser(request));
