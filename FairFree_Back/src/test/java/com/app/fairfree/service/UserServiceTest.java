@@ -40,6 +40,7 @@ class UserServiceTest {
 
     @BeforeEach
     void setUp() {
+        // Intentionally left empty.
     }
 
     @Test
@@ -71,7 +72,7 @@ class UserServiceTest {
 
         verify(userRepository).findByEmail("user@example.com"); // default called 1 time
         verify(passwordEncoder, times(1)).matches("password123", "encodedPassword");
-        verify(jwtService).generateToken(eq("user@example.com"), eq(Set.of("ROLE_USER")));
+        verify(jwtService).generateToken("user@example.com", Set.of("ROLE_USER"));
     }
 
     @Test
@@ -97,8 +98,8 @@ class UserServiceTest {
                 .build();
         normalUser.setRoles(Set.of(normalRole));
 
-//        when(userRepository.findByEmail(anyString())).thenReturn(Optional.of(normalUser));
-//        when(passwordEncoder.matches(anyString(), anyString())).thenReturn(false);
+        when(userRepository.findByEmail(anyString())).thenReturn(Optional.of(normalUser));
+        when(passwordEncoder.matches(anyString(), anyString())).thenReturn(false);
 
         RuntimeException ex = assertThrows(RuntimeException.class,
                 () -> userService.loginUser(request));

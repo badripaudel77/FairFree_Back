@@ -27,16 +27,16 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @Testcontainers
-public class ItemIntegrationTest {
+class ItemIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    private final String email = "new@example.com";
+    private final String ownerEmail = "owner@example.com";
+    private final String viewerEmail = "viewer@example.com";
     private final String password = "password123";
-
 
     @Container
     private static final PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:17-alpine")
@@ -52,8 +52,59 @@ public class ItemIntegrationTest {
     }
 
     @BeforeEach
-    void setupUser() throws Exception {
-        SignupRequest signup = new SignupRequest("New User", email, password);
+    void registerUsers() throws Exception {
+        setupUser("Owner", ownerEmail, password);
+        setupUser("Viewer", viewerEmail, password);
+    }
+
+    @Test
+    void getAllAvailableItemCreatedByOtherUsers() throws Exception {
+        addItemByTheOwner();
+
+        String viewerToken = loginAndGetToken(viewerEmail, password);
+
+        mockMvc.perform(get("/api/v1/items/available")
+                        .header("Authorization", "Bearer " + viewerToken)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].name").value("Test Item"))
+                .andExpect(jsonPath("$[0].quantity").value(10))
+                .andExpect(jsonPath("$[0].expiresAfterDays").value(30))
+                .andExpect(jsonPath("$[0].location.city").value("New York"))
+                .andExpect(jsonPath("$[0].owner.email").value(ownerEmail))
+                .andExpect(jsonPath("$[0].receiver").doesNotExist());
+    }
+
+    void addItemByTheOwner() throws Exception {
+        String ownerToken = loginAndGetToken(ownerEmail, password);
+
+        LocationRequest location =
+                new LocationRequest("123 Main Street", "New York", "NY", "USA", 40.7128, -74.0060);
+        ItemRequest itemRequest =
+                new ItemRequest("Test Item", "This is a test item", 10, false, 30, location, null);
+
+        MockMultipartFile jsonPart =
+                new MockMultipartFile("itemToBeAddedString", "", MediaType.APPLICATION_JSON_VALUE,
+                        objectMapper.writeValueAsBytes(itemRequest));
+        MockMultipartFile imageFile =
+                new MockMultipartFile("images", "dummy.jpg", MediaType.IMAGE_JPEG_VALUE,
+                        "fake-image-content".getBytes());
+
+        // Add item via multipart POST
+        mockMvc.perform(multipart("/api/v1/items")
+                        .file(jsonPart)
+                        .file(imageFile)
+                        .header("Authorization", "Bearer " + ownerToken))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.name").value("Test Item"))
+                .andExpect(jsonPath("$.quantity").value(10))
+                .andExpect(jsonPath("$.location.city").value("New York"))
+                .andExpect(jsonPath("$.owner.email").value(ownerEmail))
+                .andExpect(jsonPath("$.receiver").doesNotExist());
+    }
+
+    void setupUser(String name, String email, String password) throws Exception {
+        SignupRequest signup = new SignupRequest(name, email, password);
 
         mockMvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -61,55 +112,18 @@ public class ItemIntegrationTest {
                 .andExpect(status().isCreated());
     }
 
-    @Test
-    void addAndGetAvailableItems() throws Exception {
-        // Login user and get JWT token
+    String loginAndGetToken(String email, String password) throws Exception {
         LoginRequest login = new LoginRequest(email, password);
-        String loginResponse = mockMvc.perform(post("/api/v1/auth/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(login)))
-                .andExpect(status().isOk())
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
 
-        Map<String, Object> loginMap = objectMapper.readValue(loginResponse, Map.class);
-        String token = (String) loginMap.get("token");
+        String response =
+                mockMvc.perform(post("/api/v1/auth/login")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(login)))
+                        .andExpect(status().isOk())
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString();
 
-        LocationRequest location = new LocationRequest("123 Main Street", "New York", "NY", "USA", 40.7128, -74.0060);
-        ItemRequest itemRequest = new ItemRequest("Test Item", "This is a test item", 10, false, 30, location, null);
-
-        MockMultipartFile jsonPart = new MockMultipartFile(
-                "itemToBeAddedString", "",
-                MediaType.APPLICATION_JSON_VALUE, objectMapper.writeValueAsBytes(itemRequest)
-        );
-        MockMultipartFile imageFile = new MockMultipartFile(
-                "images", "dummy.jpg",
-                MediaType.IMAGE_JPEG_VALUE, "fake-image-content".getBytes()
-        );
-
-        // Add item via multipart POST
-        mockMvc.perform(multipart("/api/v1/items")
-                        .file(jsonPart)
-                        .file(imageFile)
-                        .header("Authorization", "Bearer " + token))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.name").value("Test Item"))
-                .andExpect(jsonPath("$.quantity").value(10))
-                .andExpect(jsonPath("$.location.city").value("New York"))
-                .andExpect(jsonPath("$.owner.email").value(email))
-                .andExpect(jsonPath("$.receiver").doesNotExist());
-
-        // Retrieve all available items
-        mockMvc.perform(get("/api/v1/items/available")
-                        .header("Authorization", "Bearer " + token)
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].name").value("Test Item"))
-                .andExpect(jsonPath("$[0].quantity").value(10))
-                .andExpect(jsonPath("$[0].expiresAfterDays").value(30))
-                .andExpect(jsonPath("$[0].location.city").value("New York"))
-                .andExpect(jsonPath("$[0].owner.email").value(email))
-                .andExpect(jsonPath("$[0].receiver").doesNotExist());
+        return (String) objectMapper.readValue(response, Map.class).get("token");
     }
 }
