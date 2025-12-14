@@ -27,7 +27,7 @@ public class FeedController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size
     ) {
-        Long currentUserId =  authController.getCurrentUserId(); // adapt to your security model
+        Long currentUserId =  authController.getCurrentUserId();
         FeedResponse feed = feedService.getFeedForUser(currentUserId, view, page, size);
         return ResponseEntity.ok(feed);
     }

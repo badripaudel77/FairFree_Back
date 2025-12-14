@@ -2,6 +2,8 @@ package com.app.fairfree.service;
 
 import com.app.fairfree.dto.LoginRequest;
 import com.app.fairfree.dto.SignupRequest;
+import com.app.fairfree.exception.BadRequestException;
+import com.app.fairfree.exception.ResourceNotFoundException;
 import com.app.fairfree.model.Role;
 import com.app.fairfree.model.User;
 import com.app.fairfree.repository.RoleRepository;
@@ -32,10 +34,10 @@ public class UserService {
     public Map<String, Object> loginUser(LoginRequest request) {
         // Find user by email
         User user = userRepository.findByEmail(request.email())
-                .orElseThrow(() -> new RuntimeException("Invalid email or password."));
+                .orElseThrow(() -> new ResourceNotFoundException("User with given details not found."));
         // Validate password
         if (!passwordEncoder.matches(request.password(), user.getPassword())) {
-            throw new RuntimeException("Invalid email or password.");
+            throw new BadRequestException("Invalid Password");
         }
         // Convert roles to set of string names
         Set<String> roles = user.getRoles().stream()
@@ -58,7 +60,7 @@ public class UserService {
         // Check duplicate email
         userRepository.findByEmail(request.email())
                 .ifPresent(u -> {
-                    throw new RuntimeException("Email already used by another account.");
+                    throw new BadRequestException("Email already used by another account.");
                 });
         // Create user
         User user = User.builder()
@@ -70,7 +72,7 @@ public class UserService {
 
         // Set default role
         Role defaultRole = roleRepository.findByName("ROLE_USER")
-                .orElseThrow(() -> new RuntimeException("Default role not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Default role not found"));
         user.setRoles(Set.of(defaultRole));
         // Save user
         userRepository.save(user);

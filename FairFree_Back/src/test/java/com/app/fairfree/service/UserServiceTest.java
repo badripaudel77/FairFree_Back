@@ -1,6 +1,8 @@
 package com.app.fairfree.service;
 
 import com.app.fairfree.dto.SignupRequest;
+import com.app.fairfree.exception.BadRequestException;
+import com.app.fairfree.exception.ResourceNotFoundException;
 import com.app.fairfree.model.User;
 import com.app.fairfree.model.Role;
 import com.app.fairfree.dto.LoginRequest;
@@ -81,9 +83,9 @@ class UserServiceTest {
 
         when(userRepository.findByEmail("notfound@example.com")).thenReturn(Optional.empty());
 
-        RuntimeException ex = assertThrows(RuntimeException.class,
+        ResourceNotFoundException ex = assertThrows(ResourceNotFoundException.class,
                 () -> userService.loginUser(request));
-        assertEquals("Invalid email or password.", ex.getMessage());
+        assertEquals("User with given details not found.", ex.getMessage());
     }
 
     @Test
@@ -101,9 +103,9 @@ class UserServiceTest {
         when(userRepository.findByEmail(anyString())).thenReturn(Optional.of(normalUser));
         when(passwordEncoder.matches(anyString(), anyString())).thenReturn(false);
 
-        RuntimeException ex = assertThrows(RuntimeException.class,
+        BadRequestException ex = assertThrows(BadRequestException.class,
                 () -> userService.loginUser(request));
-        assertEquals("Invalid email or password.", ex.getMessage());
+        assertEquals("Invalid Password", ex.getMessage());
     }
 
     @Test

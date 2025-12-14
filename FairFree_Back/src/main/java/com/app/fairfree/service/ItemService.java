@@ -3,6 +3,7 @@ package com.app.fairfree.service;
 import com.app.fairfree.dto.*;
 import com.app.fairfree.enums.ClaimStatus;
 import com.app.fairfree.enums.NotificationType;
+import com.app.fairfree.exception.ResourceNotFoundException;
 import com.app.fairfree.model.*;
 import com.app.fairfree.enums.ItemStatus;
 import com.app.fairfree.repository.ClaimRepository;
@@ -120,7 +121,7 @@ public class ItemService {
     // Retrieve all items that has not been donated yet and placed by other users (not logged in user)
     public List<ItemResponse> getAllAvailableItems(String username) {
         User user = userRepository.findByEmail(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         List<Item> items = itemRepository.findAllItemsNotByUser(ItemStatus.DONATED, user.getId());
 
         return items.stream().map(item -> {
@@ -240,7 +241,7 @@ public class ItemService {
                     itemRepository.delete(item);
                     return item;
                 })
-                .orElseThrow(() -> new RuntimeException("Item not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Item not found"));
         return true;
     }
 
@@ -248,7 +249,7 @@ public class ItemService {
     @Transactional
     public ClaimResponse claimItem(Long itemId, UserDetails claimant) {
         Item item = itemRepository.findById(itemId)
-                .orElseThrow(() -> new RuntimeException("Item not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Item not found"));
 
         if (item.getOwner().getEmail().equals(claimant.getUsername())) {
             throw new RuntimeException("Owner cannot claim their own item");
@@ -276,7 +277,7 @@ public class ItemService {
     @Transactional
     public ClaimResponse declineClaim(Long claimId, UserDetails owner) {
         Claim claim = claimRepository.findById(claimId)
-                .orElseThrow(() -> new RuntimeException("Claim not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Claim not found"));
         Item item = claim.getItem();
         if (!item.getOwner().getEmail().equals(owner.getUsername())) {
             throw new RuntimeException("Not authorized to decline this claim");
