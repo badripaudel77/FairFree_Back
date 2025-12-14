@@ -9,10 +9,10 @@ import com.app.fairfree.repository.UserRepository;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.*;
@@ -20,7 +20,7 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-@SpringBootTest
+@ExtendWith(MockitoExtension.class)
 class UserServiceTest {
 
     @Mock
@@ -40,7 +40,7 @@ class UserServiceTest {
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
+        // Intentionally left empty.
     }
 
     @Test
@@ -50,6 +50,7 @@ class UserServiceTest {
 
         Role normalRole = new Role(1L, "ROLE_USER");
         User normalUser = User.builder()
+                .id(1L)
                 .email("user@example.com")
                 .password("encodedPassword")
                 .fullName("Normal User")
@@ -97,8 +98,8 @@ class UserServiceTest {
                 .build();
         normalUser.setRoles(Set.of(normalRole));
 
-        when(userRepository.findByEmail("user@example.com")).thenReturn(Optional.of(normalUser));
-        when(passwordEncoder.matches("wrong-password", "encodedPassword")).thenReturn(false);
+        when(userRepository.findByEmail(anyString())).thenReturn(Optional.of(normalUser));
+        when(passwordEncoder.matches(anyString(), anyString())).thenReturn(false);
 
         RuntimeException ex = assertThrows(RuntimeException.class,
                 () -> userService.loginUser(request));
