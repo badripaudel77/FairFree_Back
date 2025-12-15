@@ -14,7 +14,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -55,7 +57,9 @@ public class ItemController {
     //  Get All Available Items
     @GetMapping("/available")
     public ResponseEntity<List<ItemResponse>> getAllAvailableItems() {
-        return ResponseEntity.ok(itemService.getAllAvailableItems());
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        assert authentication != null;
+        return ResponseEntity.ok(itemService.getAllAvailableItems(authentication.getName()));
     }
 
     // Get Items by specific User
@@ -72,6 +76,14 @@ public class ItemController {
         return itemService.getItemById(itemId)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<List<ItemResponse>> searchItems(@RequestParam("searchText") String query, @AuthenticationPrincipal UserDetails userDetails) {
+        User user = userRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        List<ItemResponse> results = itemService.findMatchingItems(query, user.getId());
+        return ResponseEntity.ok(results);
     }
 
     // Update Item Status

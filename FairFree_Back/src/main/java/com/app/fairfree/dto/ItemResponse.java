@@ -1,6 +1,7 @@
 package com.app.fairfree.dto;
 
 import com.app.fairfree.enums.ItemStatus;
+import com.app.fairfree.model.Category;
 import lombok.Builder;
 
 import java.util.List;
@@ -18,5 +19,6 @@ public record ItemResponse(
         UserResponse receiver,      // receiver, null if not claimed
         Integer expiresAfterDays,
         Boolean neverExpires,
-        List<ClaimResponse> claims
+        List<ClaimResponse> claims,
+        Category category
 ) {}

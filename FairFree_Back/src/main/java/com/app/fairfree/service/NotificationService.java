@@ -1,18 +1,18 @@
 package com.app.fairfree.service;
-import com.app.fairfree.dto.ItemResponse;
 import com.app.fairfree.dto.NotificationResponse;
+import com.app.fairfree.enums.NotificationType;
 import com.app.fairfree.model.Notification;
 import com.app.fairfree.model.User;
 import com.app.fairfree.repository.NotificationRepository;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
-import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -30,14 +30,16 @@ public class NotificationService {
         this.notificationRepository = notificationRepository;
     }
 
-    public List<NotificationResponse> getNotificationByUser(User user) {
-
-        List<Notification> notifications =  notificationRepository.findByUserAndReadFalse(user);
+    public List<NotificationResponse> getNotificationsForUser(User user) {
+        List<Notification> notifications =  notificationRepository.getAllNotificationsForTheUser(user.getId(), LocalDateTime.now().minusYears(1));
 
         return notifications.stream()
                 .map(notification -> NotificationResponse.builder()
                         .id(notification.getId())
+                        .itemId(notification.getItemId())
+                        .type(notification.getType())
                         .message(notification.getMessage())
+                        .isRead(notification.isRead())
                         .createdAt(notification.getCreatedAt())
                         .build())
                 .collect(Collectors.toList());
@@ -45,14 +47,16 @@ public class NotificationService {
 
     @Transactional
     public void readNotification(User user) {
-        List<Notification> unreadNotifications = notificationRepository.findByUserAndReadFalse(user);
+        List<Notification> unreadNotifications = notificationRepository.getAllNotificationsForTheUser(user.getId(), null);
         unreadNotifications.forEach(notification -> notification.setRead(true));
         notificationRepository.saveAll(unreadNotifications);
     }
 
-    public Notification pushNotification(User user, String message) {
+    public Notification pushNotification(User user, Long itemId, NotificationType type, String message) {
         Notification notification = Notification.builder()
                 .user(user)
+                .itemId(itemId)
+                .type(type)
                 .message(message)
                 .read(false) // just to be explicit
                 .build();
@@ -93,7 +97,5 @@ public class NotificationService {
                 "</td></tr>" +
                 "</table></body></html>";
     }
-
-
 
 }

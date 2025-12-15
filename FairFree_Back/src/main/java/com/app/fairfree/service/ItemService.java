@@ -2,6 +2,8 @@ package com.app.fairfree.service;
 
 import com.app.fairfree.dto.*;
 import com.app.fairfree.enums.ClaimStatus;
+import com.app.fairfree.enums.NotificationType;
+import com.app.fairfree.exception.ResourceNotFoundException;
 import com.app.fairfree.model.*;
 import com.app.fairfree.enums.ItemStatus;
 import com.app.fairfree.repository.ClaimRepository;
@@ -34,9 +36,8 @@ public class ItemService {
 
     @Transactional
     public ItemResponse addItem(User user, ItemRequest itemRequest, List<MultipartFile> images) {
-        int expiresAfterDays = itemRequest.neverExpires() ? Integer.MAX_VALUE : itemRequest.expiresAfterDays();
-            // Build Location entity
-            ItemLocation location = ItemLocation.builder()
+        // Build Location entity
+        ItemLocation location = ItemLocation.builder()
                 .address(itemRequest.location().address())
                 .city(itemRequest.location().city())
                 .state(itemRequest.location().state())
@@ -44,18 +45,23 @@ public class ItemService {
                 .latitude(itemRequest.location().latitude())
                 .longitude(itemRequest.location().longitude())
                 .build();
+        // Set Category if it is null or not.
+        Category category = Optional.ofNullable(itemRequest.category())
+                .map(c -> new Category(c.getId(), c.getName()))
+                .orElse(null);
 
-            // Build Item entity
-            Item item = Item.builder()
+        // Build Item entity
+        Item item = Item.builder()
                 .title(itemRequest.title())
                 .description(itemRequest.description())
                 .quantity(itemRequest.quantity())
-                .status(ItemStatus.PRIVATE) // by default private.
+                .status(ItemStatus.AVAILABLE) // by default available.
                 .owner(user)
                 .receiver(null)
                 .neverExpires(itemRequest.neverExpires())
                 .expiresAfterDays(itemRequest.neverExpires() ? null : itemRequest.expiresAfterDays())
                 .location(location)
+                .category(category)
                 .build();
 
         // Save item first to get its ID for S3 folder organization
@@ -106,13 +112,17 @@ public class ItemService {
                 null,           // receiver
                 savedItem.getExpiresAfterDays(),
                 savedItem.getNeverExpires(),
-                claimResponses
+                claimResponses,
+                savedItem.getCategory()
         );
 
     }
 
-    public List<ItemResponse> getAllAvailableItems() {
-        List<Item> items = itemRepository.findByStatus(ItemStatus.AVAILABLE);
+    // Retrieve all items that has not been donated yet and placed by other users (not logged in user)
+    public List<ItemResponse> getAllAvailableItems(String username) {
+        User user = userRepository.findByEmail(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        List<Item> items = itemRepository.findAllItemsNotByUser(ItemStatus.DONATED, user.getId());
 
         return items.stream().map(item -> {
             List<String> imageUrls = Optional.ofNullable(item.getImages())
@@ -149,11 +159,46 @@ public class ItemService {
                     receiverResponse,
                     item.getExpiresAfterDays(),
                     item.getNeverExpires(),
-                    claimResponses
+                    claimResponses,
+                    item.getCategory()
             );
         }).toList();
     }
 
+    public List<ItemResponse> findMatchingItems(String query, Long userId) {
+        List<Item> items = itemRepository.searchItems(query, userId);
+        return items.stream().map(item -> {
+            List<String> imageUrls = Optional.ofNullable(item.getImages())
+                    .orElse(Collections.emptyList())
+                    .stream()
+                    .map(ItemImage::getImageUrl)
+                    .toList();
+
+            List<ClaimResponse> claimResponses = Optional.ofNullable(item.getClaims())
+                    .orElse(Collections.emptyList())
+                    .stream()
+                    .map(ClaimResponse::from)
+                    .toList();
+
+            UserResponse ownerResponse = new UserResponse(
+                    item.getOwner().getId(),
+                    item.getOwner().getFullName(),
+                    item.getOwner().getEmail()
+            );
+
+            UserResponse receiverResponse = item.getReceiver() != null
+                    ? new UserResponse(item.getReceiver().getId(), item.getReceiver().getFullName(), item.getReceiver().getEmail())
+                    : null;
+
+            return new ItemResponse(
+                    item.getId(), item.getTitle(), item.getDescription(),
+                    item.getQuantity(), LocationResponse.from(item.getLocation()),
+                    imageUrls, item.getStatus(), ownerResponse, receiverResponse,
+                    item.getExpiresAfterDays(), item.getNeverExpires(),
+                    claimResponses, item.getCategory()
+            );
+        }).toList();
+    }
 
     @Transactional
     public ItemResponse updateStatus(Long itemId, ItemStatus newStatus) {
@@ -194,7 +239,8 @@ public class ItemService {
                 receiverResponse,
                 updatedItem.getExpiresAfterDays(),
                 updatedItem.getNeverExpires(),
-                claimResponses
+                claimResponses,
+                updatedItem.getCategory()
         );
     }
 
@@ -214,7 +260,8 @@ public class ItemService {
                                 + " no longer donating the item you claimed.";
                         notificationService.sendEmailNotification(claim.getUser().getEmail(),
                                 "Item has been deleted by the owner", message);
-                        notificationService.pushNotification(claim.getUser(), message);
+                        // JUST pass as cancelled
+                        notificationService.pushNotification(claim.getUser(), item.getId(), NotificationType.CLAIM_CANCELLED, message);
                     }
                     // Get all image keys associated with the item
                     List<String> imageKeys = Optional.ofNullable(item.getImages())
@@ -223,12 +270,12 @@ public class ItemService {
                             .map(ItemImage::getImageKey)
                             .toList();
                     // Delete images from S3
-                    fileService.deleteImages(imageKeys);
+                    // fileService.deleteImages(imageKeys);
                     // Delete item from DB (this will cascade to ItemImage and Claim)
                     itemRepository.delete(item);
                     return item;
                 })
-                .orElseThrow(() -> new RuntimeException("Item not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Item not found"));
         return true;
     }
 
@@ -236,7 +283,7 @@ public class ItemService {
     @Transactional
     public ClaimResponse claimItem(Long itemId, UserDetails claimant) {
         Item item = itemRepository.findById(itemId)
-                .orElseThrow(() -> new RuntimeException("Item not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Item not found"));
 
         if (item.getOwner().getEmail().equals(claimant.getUsername())) {
             throw new RuntimeException("Owner cannot claim their own item");
@@ -249,27 +296,27 @@ public class ItemService {
                 .build();
         item.getClaims().add(claim);
         claimRepository.save(claim);
-        if (item.getStatus() == ItemStatus.AVAILABLE) {
+        if (item.getStatus() != ItemStatus.DONATED && item.getStatus() != ItemStatus.ON_HOLD) {
             item.setStatus(ItemStatus.ON_HOLD);
             itemRepository.save(item);
         }
         // Notify the owner that someone has claimed it.
         String message = claim.getUser().getFullName() + " claimed for your donation.";
+        notificationService.pushNotification(claim.getItem().getOwner(), itemId, NotificationType.ITEM_CLAIMED, message);
         notificationService.sendEmailNotification(claim.getItem().getOwner().getEmail(),
                 "Your item has been claimed", message);
-        notificationService.pushNotification(claim.getUser(), message);
         return ClaimResponse.from(claim);
     }
 
     @Transactional
     public ClaimResponse declineClaim(Long claimId, UserDetails owner) {
         Claim claim = claimRepository.findById(claimId)
-                .orElseThrow(() -> new RuntimeException("Claim not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Claim not found"));
         Item item = claim.getItem();
         if (!item.getOwner().getEmail().equals(owner.getUsername())) {
             throw new RuntimeException("Not authorized to decline this claim");
         }
-        if(claim.getStatus() != ClaimStatus.PENDING) {
+        if (claim.getStatus() != ClaimStatus.PENDING) {
             throw new RuntimeException("Can't decline, the claim is not in PENDING status.");
         }
         claim.setStatus(ClaimStatus.DECLINED);
@@ -282,10 +329,10 @@ public class ItemService {
             itemRepository.save(item);
         }
         // Notify the claimer that owner has declined your claim
-        String message = claim.getItem().getOwner().getFullName() + " denied your claim.";
-        notificationService.sendEmailNotification(claim.getItem().getOwner().getEmail(),
+        String message = item.getOwner().getFullName() + " denied your claim.";
+        notificationService.sendEmailNotification(claim.getUser().getEmail(),
                 "Claim Declined by the owner", message);
-        notificationService.pushNotification(claim.getItem().getOwner(), message);
+        notificationService.pushNotification(claim.getUser(), item.getId(), NotificationType.CLAIM_DENIED, message);
 
         return ClaimResponse.from(claim);
     }
@@ -316,14 +363,13 @@ public class ItemService {
                         + " has approved your claim. Please pick it up from the location.";
                 notificationService.sendEmailNotification(claim.getUser().getEmail(),
                         "Your claim has been approved", message);
-                notificationService.pushNotification(claim.getUser(), message);
-            }
-            else {
+                notificationService.pushNotification(claim.getUser(), item.getId(), NotificationType.CLAIM_DENIED, message);
+            } else {
                 String message = claim.getItem().getOwner().getFullName()
                         + " didn't approve your claim.";
                 notificationService.sendEmailNotification(claim.getUser().getEmail(),
                         "Your claim was not approved", message);
-                notificationService.pushNotification(claim.getUser(), message);
+                notificationService.pushNotification(claim.getUser(), item.getId(), NotificationType.CLAIM_APPROVED, message);
             }
         }
         return ClaimResponse.from(claim);
@@ -348,9 +394,9 @@ public class ItemService {
         }
         // Notify the owner that user has canceled their clam.
         String message = claim.getUser().getFullName() + " removed their claim for the item.";
-        notificationService.sendEmailNotification(claim.getItem().getOwner().getEmail(),
+        notificationService.sendEmailNotification(item.getOwner().getEmail(),
                 "User removed their claim for the item.", message);
-        notificationService.pushNotification(claim.getItem().getOwner(), message);
+        notificationService.pushNotification(item.getOwner(), item.getId(), NotificationType.CLAIM_CANCELLED, message);
 
         return ClaimResponse.from(claim);
     }
@@ -397,7 +443,8 @@ public class ItemService {
                             receiverResponse,
                             item.getExpiresAfterDays(),
                             item.getNeverExpires(),
-                            claimResponses
+                            claimResponses,
+                            item.getCategory()
                     );
                 });
     }
@@ -437,14 +484,14 @@ public class ItemService {
                     receiverResponse,
                     item.getExpiresAfterDays(),
                     item.getNeverExpires(),
-                    claimResponses
+                    claimResponses,
+                    item.getCategory()
             );
         }).toList();
     }
 
 
     public List<Item> getExpiringItems() {
-
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime future = now.plusDays(expiringDays);
 

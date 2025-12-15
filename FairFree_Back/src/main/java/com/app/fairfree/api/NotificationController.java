@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping(value = "api/v1/notification")
+@RequestMapping(value = "api/v1/notifications")
 public class NotificationController {
 
     private final NotificationService notificationService;
@@ -23,14 +23,14 @@ public class NotificationController {
         this.userRepository = userRepository;
     }
 
-    @GetMapping("/my-notification")
+    @GetMapping("/me")
     public ResponseEntity<List<NotificationResponse>> getNotificationsByUser(@AuthenticationPrincipal UserDetails userDetails) {
         User user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        return ResponseEntity.ok(notificationService.getNotificationByUser(user));
+        return ResponseEntity.ok(notificationService.getNotificationsForUser(user));
     }
 
-    @PutMapping("/read")
+    @PutMapping("/mark-read")
     public ResponseEntity<String> readNotification(@AuthenticationPrincipal UserDetails userDetails) {
         User user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found"));

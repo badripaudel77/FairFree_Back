@@ -1,5 +1,6 @@
 package com.app.fairfree.model;
 
+import com.app.fairfree.enums.NotificationType;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -11,7 +12,7 @@ import java.time.LocalDateTime;
  * This class is for holding info about system notifications sent to users.
  */
 @Entity
-@Table(name = "notification")
+@Table(name = "notifications")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -28,6 +29,14 @@ public class Notification {
     private User user;
 
     private String message;
+
+    @Column(name = "item_id")
+    private Long itemId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private NotificationType type;
+
 
     @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
     private boolean read = false;   // default false
