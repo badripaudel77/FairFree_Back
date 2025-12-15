@@ -165,6 +165,40 @@ public class ItemService {
         }).toList();
     }
 
+    public List<ItemResponse> findMatchingItems(String query, Long userId) {
+        List<Item> items = itemRepository.searchItems(query, userId);
+        return items.stream().map(item -> {
+            List<String> imageUrls = Optional.ofNullable(item.getImages())
+                    .orElse(Collections.emptyList())
+                    .stream()
+                    .map(ItemImage::getImageUrl)
+                    .toList();
+
+            List<ClaimResponse> claimResponses = Optional.ofNullable(item.getClaims())
+                    .orElse(Collections.emptyList())
+                    .stream()
+                    .map(ClaimResponse::from)
+                    .toList();
+
+            UserResponse ownerResponse = new UserResponse(
+                    item.getOwner().getId(),
+                    item.getOwner().getFullName(),
+                    item.getOwner().getEmail()
+            );
+
+            UserResponse receiverResponse = item.getReceiver() != null
+                    ? new UserResponse(item.getReceiver().getId(), item.getReceiver().getFullName(), item.getReceiver().getEmail())
+                    : null;
+
+            return new ItemResponse(
+                    item.getId(), item.getTitle(), item.getDescription(),
+                    item.getQuantity(), LocationResponse.from(item.getLocation()),
+                    imageUrls, item.getStatus(), ownerResponse, receiverResponse,
+                    item.getExpiresAfterDays(), item.getNeverExpires(),
+                    claimResponses, item.getCategory()
+            );
+        }).toList();
+    }
 
     @Transactional
     public ItemResponse updateStatus(Long itemId, ItemStatus newStatus) {

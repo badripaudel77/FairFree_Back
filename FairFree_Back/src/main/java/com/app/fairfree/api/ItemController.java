@@ -78,6 +78,14 @@ public class ItemController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @GetMapping("/search")
+    public ResponseEntity<List<ItemResponse>> searchItems(@RequestParam("searchText") String query, @AuthenticationPrincipal UserDetails userDetails) {
+        User user = userRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        List<ItemResponse> results = itemService.findMatchingItems(query, user.getId());
+        return ResponseEntity.ok(results);
+    }
+
     // Update Item Status
     @PatchMapping("/{itemId}/status")
     public ResponseEntity<ItemResponse> updateItemStatus(
