@@ -24,6 +24,9 @@ public class FileService {
     @Value("${aws.s3.bucket}")
     private String bucket;
 
+    @Value("${spring.profiles.active:dev}")
+    private String activeProfile;
+
     @Value("${aws.s3.base-folder:fairfree-item-images/}")
     private String baseFolder;
 
@@ -34,39 +37,39 @@ public class FileService {
     // Upload a single image to S3 under item-specific folder
     @Transactional
     public Map<String, String> uploadImage(MultipartFile file, Long itemId) {
-        // TODO: For DEV, just work on this, if on prod, we will use the code below.
-        Map<String,String> map = new HashMap<>();
-        map.put("key", "MY_KEY");
-        map.put("url", "https://fairfree-item-images.s3.us-east-1.amazonaws.com/fairfree-item-images/item/9/27fd276e-ea51-48ed-82a5-a28cc17b011f_for_Loop.png");
-        return map;
-        /**
-         * try {
-         *             String safeFileName = file.getOriginalFilename().replaceAll("[^a-zA-Z0-9.-]", "_");
-         *             String key = baseFolder + "item/" + itemId + "/" + UUID.randomUUID() + "_" + safeFileName;
-         *
-         *             PutObjectRequest request = PutObjectRequest.builder()
-         *                     .bucket(bucket)
-         *                     .key(key)
-         *                     .contentType(file.getContentType())
-         *                     .contentLength(file.getSize())
-         *                     .build();
-         *
-         *             client.putObject(request, RequestBody.fromBytes(file.getBytes()));
-         *
-         *             String url = buildS3Url(key);
-         *             logger.info("Uploaded file '{}' to S3 bucket '{}' with key '{}' and url '{}'",
-         *                     file.getOriginalFilename(), bucket, key, url);
-         *
-         *             Map<String, String> result = new HashMap<>();
-         *             result.put("key", key);
-         *             result.put("url", url);
-         *             return result;
-         *         }
-         *         catch (IOException e) {
-         *             logger.error("Failed to upload file {}", file.getOriginalFilename(), e);
-         *             throw new RuntimeException("Failed to upload file: " + file.getOriginalFilename());
-         *         }
-         */
+        if (!"prod".equalsIgnoreCase(activeProfile)) {
+            System.out.println("not a prod env");
+            Map<String, String> map = new HashMap<>();
+            map.put("key", "MY_KEY");
+            map.put("url", "https://fairfree-item-images.s3.us-east-1.amazonaws.com/fairfree-item-images/item/9/27fd276e-ea51-48ed-82a5-a28cc17b011f_for_Loop.png");
+            return map;
+        }
+        try {
+            System.out.println("this is a prod env");
+            String safeFileName = file.getOriginalFilename().replaceAll("[^a-zA-Z0-9.-]", "_");
+            String key = baseFolder + "item/" + itemId + "/" + UUID.randomUUID() + "_" + safeFileName;
+
+            PutObjectRequest request = PutObjectRequest.builder()
+                    .bucket(bucket)
+                    .key(key)
+                    .contentType(file.getContentType())
+                    .contentLength(file.getSize())
+                    .build();
+
+            client.putObject(request, RequestBody.fromBytes(file.getBytes()));
+
+            String url = buildS3Url(key);
+            logger.info("Uploaded file '{}' to S3 bucket '{}' with key '{}' and url '{}'",
+                    file.getOriginalFilename(), bucket, key, url);
+
+            Map<String, String> result = new HashMap<>();
+            result.put("key", key);
+            result.put("url", url);
+            return result;
+        } catch (IOException e) {
+            logger.error("Failed to upload file {}", file.getOriginalFilename(), e);
+            throw new RuntimeException("Failed to upload file: " + file.getOriginalFilename());
+        }
     }
 
     // Delete single image from S3 using its key

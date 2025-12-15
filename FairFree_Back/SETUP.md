@@ -43,3 +43,11 @@ Please use the following software versions for setting up.
   
 - Generate Access and Secret Key and download and safely store. Don't put that in code or repo. 
 - Pass as env variables while running.
+- spring.profiles.active=prod for prod enabling.
+If you need to pass the env variables while running through the command, pass it as:
+-  mvn spring-boot:run "-Dspring-boot.run.arguments=--spring.profiles.active=prod --AWS_ACCESS_KEY=VALID_ACCESS_KEY --AWS_SECRET_KEY=VALID_SECRET_KEY"
+
+--- For PROD Release ---
+1. SPRING_PROFILES_ACTIVE:prod
+2. AWS region: us-west-1 (region where s3 bucket lives)
+3. If profile is prod, must pass AWS_SECRET_KEY && AWS_ACCESS_KEY.
