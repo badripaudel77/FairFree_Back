@@ -48,7 +48,7 @@ FairFree helps individuals, households, and organizations track item expiration 
 - Test Containers
 
 ### **Infrastructure**
-- AWS Elastic Beanstalk
+- AWS EC2
 - AWS S3
 - Docker
 - GitHub Actions (CI/CD)
