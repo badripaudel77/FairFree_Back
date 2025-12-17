@@ -46,8 +46,10 @@ aws:
   region: us-west-1
   s3:
     bucket: fairfree-item-images
-  accessKey: ${AWS_ACCESS_KEY:AKIARG2QYYOL75MURZNW}
-  secretKey: ${AWS_SECRET_KEY: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}
+#  accessKey: ${AWS_ACCESS_KEY:AKIARG2QYYOL75MURZNW}
+  accessKey: AKIARG2QYYOL75MURZNW
+#  secretKey: ${AWS_SECRET_KEY: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}
+  secretKey: gK387Oen4i+wS0JUfBEN47z/nCg9CN6uj8i+zg1b
 
 server:
   port: 8080
