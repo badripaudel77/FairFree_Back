@@ -43,7 +43,7 @@ spring:
 # AWS S3 Credentials
 # Access and Secret Key are injected with as env variables.
 aws:
-  region: us-east-1
+  region: us-west-1
   s3:
     bucket: fairfree-item-images
   accessKey: ${AWS_ACCESS_KEY:YOUR_VALID_ACCESS_KEY}
