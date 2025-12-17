@@ -22,3 +22,8 @@ CREATE TABLE IF NOT EXISTS user_roles
     CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES users (id),
     CONSTRAINT fk_role FOREIGN KEY (role_id) REFERENCES roles (id)
 );
+
+CREATE TABLE IF NOT EXISTS categories (
+  id INT NOT NULL ,
+  name VARCHAR(100)
+);
