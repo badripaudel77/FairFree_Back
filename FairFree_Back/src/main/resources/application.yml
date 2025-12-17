@@ -38,12 +38,12 @@ spring:
       mail.smtps.ssl.trust: smtp.gmail.com
 
   profiles:
-    active: ${SPRING_PROFILES_ACTIVE:dev}
+    active: ${SPRING_PROFILES_ACTIVE:prod}
 
 # AWS S3 Credentials
 # Access and Secret Key are injected with as env variables.
 aws:
-  region: us-west-1
+  region: us-east-1
   s3:
     bucket: fairfree-item-images
   accessKey: ${AWS_ACCESS_KEY:YOUR_VALID_ACCESS_KEY}
