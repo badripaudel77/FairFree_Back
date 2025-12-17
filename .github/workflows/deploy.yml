@@ -46,7 +46,7 @@ jobs:
               with:
                   host: ${{ secrets.EC2_HOST }}
                   username: ubuntu
-                  key: ${{ secrets.EC2_SSH_KEY }}
+                  # key: ${{ secrets.EC2_SSH_KEY }}
                   script: |
                       cd ~/fairfree/FairFree_Back
                       docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/fairfree-app:latest
