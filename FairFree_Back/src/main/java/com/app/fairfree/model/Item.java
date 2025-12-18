@@ -27,7 +27,7 @@ public class Item {
     private String description;
     private Integer quantity;
 
-    @OneToMany(mappedBy = "item", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "item", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     private List<ItemImage> images = new ArrayList<>();
 
     @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
@@ -62,11 +62,11 @@ public class Item {
     private Category category;
 
     /** Likes associated with the item */
-    @OneToMany(mappedBy = "item", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "item", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<Like> likes = new ArrayList<>();
 
     /** Comments associated with the item */
-    @OneToMany(mappedBy = "item", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "item", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<Comment> comments = new ArrayList<>();
 
 
