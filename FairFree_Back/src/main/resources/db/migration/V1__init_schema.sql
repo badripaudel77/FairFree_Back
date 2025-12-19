@@ -1,10 +1,10 @@
-CREATE TABLE IF NOT EXISTS roles
+CREATE TABLE roles
 (
     id   SERIAL PRIMARY KEY,
     name VARCHAR(50) UNIQUE NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS users
+CREATE TABLE users
 (
     id          SERIAL PRIMARY KEY,
     full_name   VARCHAR(100),
@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS users
     last_active TIMESTAMP
 );
 
-CREATE TABLE IF NOT EXISTS user_roles
+CREATE TABLE user_roles
 (
     user_id INT NOT NULL,
     role_id INT NOT NULL,
@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS user_roles
     CONSTRAINT fk_role FOREIGN KEY (role_id) REFERENCES roles (id)
 );
 
-CREATE TABLE IF NOT EXISTS categories (
-  id INT NOT NULL ,
-  name VARCHAR(100)
+CREATE TABLE categories (
+                                          id INT NOT NULL ,
+                                          name VARCHAR(100)
 );

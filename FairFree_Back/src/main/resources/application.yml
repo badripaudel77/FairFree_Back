@@ -19,7 +19,8 @@ spring:
 
   sql:
     init:
-      mode: always
+#      mode: always
+      mode: never
       platform: postgres
   servlet:
     multipart:
@@ -39,6 +40,11 @@ spring:
 
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:dev}
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
 
 # AWS S3 Credentials
 # Access and Secret Key are injected with as env variables.
@@ -66,6 +72,8 @@ logging:
   level:
     org.hibernate.SQL: DEBUG
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    root: debug
+    org.flywaydb: DEBUG
 
 notification:
   items:
