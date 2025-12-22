@@ -25,7 +25,7 @@ import java.util.List;
 
 
 @RestController
-@RequestMapping("/api/v1/items")
+@RequestMapping(value = "/api/{version}/items", version = "1")
 @RequiredArgsConstructor
 public class ItemController {
 

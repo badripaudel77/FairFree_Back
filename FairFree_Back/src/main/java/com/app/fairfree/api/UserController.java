@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping(value = "/api/v1/users", produces = "application/json")
+@RequestMapping(value = "/api/v1/users", version = "1", produces = "application/json")
 public class UserController {
     private final UserService userService;
 

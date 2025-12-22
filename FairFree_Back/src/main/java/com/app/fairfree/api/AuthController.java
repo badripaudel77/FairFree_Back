@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 @RestController
-@RequestMapping(value = "/api/v1/auth", produces = "application/json")
+@RequestMapping(value = "/api/{version}/auth", produces = "application/json", version = "1")
 @RequiredArgsConstructor
 public class AuthController {
 
