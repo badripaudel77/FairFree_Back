@@ -22,6 +22,10 @@ FairFree helps individuals, households, and organizations track item expiration 
 | **Backend (Spring Boot)** | *(You are here)* |
 
 ---
+### Workflow Diagram 
+![Final High Level Workflow Diagram](document/architecture/workflow-design/FairFree_Architecture.png)
+
+---
 
 ## 🧩 Features (Backend)
 
