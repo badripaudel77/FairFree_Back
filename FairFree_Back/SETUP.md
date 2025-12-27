@@ -21,6 +21,7 @@ Please use the following software versions for setting up.
         }
       ]
   }
+  In above policy, ```fairfree-item-images``` is the bucket name and it must match.
 
 - Create IAM user for programmatic access, name it : fairfree_app_user
   - Go To IAM Users, policy > new policy and give minimal permission required for this user. Like read, delete, update object and list buckets.
@@ -49,5 +50,5 @@ If you need to pass the env variables while running through the command, pass it
 
 --- For PROD Release ---
 1. SPRING_PROFILES_ACTIVE:prod
-2. AWS region: us-west-1 (region where s3 bucket lives)
+2. AWS region: us-west-1 (region where s3 bucket lives) - as per the need.
 3. If profile is prod, must pass AWS_SECRET_KEY && AWS_ACCESS_KEY.
