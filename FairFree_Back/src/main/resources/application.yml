@@ -83,3 +83,13 @@ logging:
 notification:
   items:
     expiring-days: 5 # 5 days
+
+# configuration for health / metrics
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, metrics, prometheus
+  endpoint:
+    health:
+      show-details: always

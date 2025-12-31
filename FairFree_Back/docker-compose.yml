@@ -49,6 +49,33 @@ services:
     stdin_open: true
     tty: true
 
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    volumes:
+      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+
+    ports:
+      - "9090:9090"
+    depends_on:
+      - fairfree-app
+    networks:
+      - monitoring
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./docker/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+      - ./docker/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./docker/grafana/dashboards:/var/lib/grafana/dashboards
+    depends_on:
+      - prometheus
+    networks:
+      - monitoring
+
 volumes:
   postgres_data_dev:
     driver: local
@@ -57,4 +84,6 @@ volumes:
 
 networks:
   fairfree-network-dev:
+    driver: bridge
+  monitoring:
     driver: bridge

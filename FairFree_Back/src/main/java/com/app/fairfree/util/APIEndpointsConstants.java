@@ -6,6 +6,7 @@ public class APIEndpointsConstants {
             "/api/v1/items/available",
             "/api/v1/public/**",
             "/v3/api-docs/**",
-            "/swagger-ui/**"
+            "/swagger-ui/**",
+             "/actuator/**"
     };
 }

@@ -52,3 +52,11 @@ If you need to pass the env variables while running through the command, pass it
 1. SPRING_PROFILES_ACTIVE:prod
 2. AWS region: us-west-1 (region where s3 bucket lives) - as per the need.
 3. If profile is prod, must pass AWS_SECRET_KEY && AWS_ACCESS_KEY.
+
+
+--- For Observability - Actuator, Prometheus, Grafana ---
+1. Actuator exposes endpoints for health data : /actuator/health, /actuator/metrics
+2. Prometheus pulls the metrics exposed by  actuator : /actuator/prometheus
+3. Grafana : For better visualization
+
+Configure Docker for Prometheus and Grafana. Look for the endpoints to access these.
